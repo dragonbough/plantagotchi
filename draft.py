@@ -2,7 +2,7 @@ import pygame
 
 pygame.init()
 
-screen = pygame.display.set_mode((1920, 1080))
+screen = pygame.display.set_mode((300, 300))
 clock = pygame.time.Clock()
 
 #initializes the clock and the game screen
