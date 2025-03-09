@@ -1,2 +1,2 @@
 # plantagotchi
-plant owning simulator made in pygame
+simple, minimalist plant owning simulator game themed after tamagotchi. made in pygame.
