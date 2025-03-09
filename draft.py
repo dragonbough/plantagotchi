@@ -13,19 +13,26 @@ screen_center = screen_width / 2, screen_height /2
 clock = pygame.time.Clock()
         
 current_screen = None
-       
+visited_screens = [] 
         
 class RenderQueue(pygame.sprite.Group):
         def __init__(self, *args):
                 pygame.sprite.RenderUpdates.__init__(self, *args)
                 
 def switch_screen_to(screen):
-        global current_screen
-        current_screen = screen 
+        global current_screen, visited_screens
         for item in on_screen_sprites:
                 item.kill()
         for item in on_screen_ui:
                 item.kill()
+        if screen == "prev":
+                print(visited_screens)
+                last_original_screens = [screen for screen in visited_screens if screen != visited_screens[len(visited_screens)-1]]
+                current_screen = last_original_screens[len(last_original_screens)-1]
+                visited_screens.pop()
+        else:
+                current_screen = screen 
+                visited_screens.append(screen) 
 
 on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
@@ -53,6 +60,9 @@ class GameSprite(pygame.sprite.Sprite):
                 self.set_image()
                 self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
                 self.group.add(self)
+        
+        def set_position(self, position):
+                self.position = position
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
 class AnimSprite(GameSprite):
@@ -87,8 +97,12 @@ class UIElement(GameSprite):
                         pygame.quit()
                 elif self.name == "plants_button":
                         switch_screen_to("plants")
-                else:
-                        print (self.name)
+                elif self.name == "back_button":
+                        switch_screen_to("prev")
+                elif self.name == "minigames_button":
+                        switch_screen_to("minigames")
+                elif self.name == "water_button":
+                        print ("watering your guy")
                         
                 
 current = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current plant as a Plant object named "daisy"
@@ -104,13 +118,16 @@ plants_button = UIElement("plants_button", (60,60), (10, 130))
 plants_button.clickable = True
 
 
-
 quit_button = UIElement("quit_button", (60, 60), (10, 230))
 quit_button.clickable = True 
 
+back_button = UIElement("back_button", (60, 60), (10, 230))
+back_button.clickable = True
 
 
 running = True
+
+switch_screen_to("main")
 
 while running:
         for event in pygame.event.get():
@@ -130,10 +147,9 @@ while running:
         
         
         #main rendering stuff goes here:
-        
-        switch_screen_to("main")
-        
+
         screen.fill("black") #background
+        
         if current_screen == "main":
                 current.update_frame() #updates the current plant object's animation and adds it to on_screen_sprites RenderQueue group
                 
@@ -141,11 +157,14 @@ while running:
                 minigames_button.update_frame()
                 plants_button.update_frame()
                 quit_button.update_frame()
-        
-        
+                
+        else:
+                back_button.update_frame()               
+                
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
         on_screen_ui.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
+        print(current_screen)
         clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
         
 pygame.quit()
