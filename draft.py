@@ -79,21 +79,25 @@ class AnimSprite(GameSprite):
                 
         def update_frame(self):
                 max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
-                if self.frame == max_frame:
-                        self.frame = 1
-                        self.playing = False #only for the single animation functionality -- repeated animations work perfectly fine with this
-                else:
-                        self.frame += 1 
                 self.set_image()
                 self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
                 self.group.add(self)
+                if self.frame == max_frame:
+                        self.frame = 1 
+                        if self.playing == True:
+                                self.playing = False #self.playing is only for animations that play once, recurring animations that don't change self.playing are fine
                         
+                else:
+                        self.frame += 1 
+                                                
         def play(self): #functionality for playing single animations -- must be used in combination with the on_screen_animations codeblock in the game rendering
                 self.playing = True
                 self.update_frame()  
                 
 waterAnim = AnimSprite("water_anim", (200, 200), (70, 40)) 
 waterAnim.group = on_screen_animations #water animation is part of the on_screen_animations group, unlike others
+quitAnim = AnimSprite("quit_anim", screen_size, (0, 0)) 
+quitAnim.group = on_screen_animations
                 
 class UIElement(GameSprite): 
         def __init__(self, *args):
@@ -104,7 +108,7 @@ class UIElement(GameSprite):
         #actions each UI element will do if perform() is called
         def perform(self):
                 if self.name == "quit_button":
-                        pygame.quit()
+                        quitAnim.play()
                 elif self.name == "plants_button":
                         switch_screen_to("plants")
                 elif self.name == "back_button":
@@ -173,10 +177,15 @@ while running:
         for anim in on_screen_animations: #all animations scheduled to be playing will play
                 if anim.playing == True:
                         anim.update_frame()
+                        print(anim.frame)
+                else:
+                        anim.kill()
+                        if anim.name == "quit_anim":
+                                pygame.quit()
                 
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
-        on_screen_animations.draw(screen)
         on_screen_ui.draw(screen)
+        on_screen_animations.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
         clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
         
