@@ -13,14 +13,19 @@ screen_center = screen_width / 2, screen_height /2
 clock = pygame.time.Clock()
         
 current_screen = None
-
-def switch_screen(screen):
-        global current_screen
-        current_screen = screen        
+       
         
 class RenderQueue(pygame.sprite.Group):
         def __init__(self, *args):
                 pygame.sprite.RenderUpdates.__init__(self, *args)
+                
+def switch_screen_to(screen):
+        global current_screen
+        current_screen = screen 
+        for item in on_screen_sprites:
+                item.kill()
+        for item in on_screen_ui:
+                item.kill()
 
 on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
@@ -81,22 +86,28 @@ class UIElement(GameSprite):
                 if self.name == "quit_button":
                         pygame.quit()
                 elif self.name == "plants_button":
-                        switch_screen("plants")
+                        switch_screen_to("plants")
                 else:
                         print (self.name)
                         
                 
-current = AnimSprite("daisy", (150, 150)) #defining the current plant as a Plant object named "daisy"
+current = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current plant as a Plant object named "daisy"
 
 
-quit_button = UIElement("quit_button", (50, 50), (10, 10))
-quit_button.clickable = True 
+water_button = UIElement("water_button", (60, 60), (10, 10))
+water_button.clickable = True
 
-plants_button = UIElement("plants_button", (50, 50), (10, 180))
+minigames_button = UIElement("minigames_button", (60, 60), (10, 70))
+minigames_button.clickable = True
+
+plants_button = UIElement("plants_button", (60,60), (10, 130))
 plants_button.clickable = True
 
-water_button = UIElement("water_button", (50, 50), (10, 230))
-water_button.clickable = True
+
+
+quit_button = UIElement("quit_button", (60, 60), (10, 230))
+quit_button.clickable = True 
+
 
 
 running = True
@@ -120,14 +131,17 @@ while running:
         
         #main rendering stuff goes here:
         
-        switch_screen("main")
+        switch_screen_to("main")
         
         screen.fill("black") #background
         if current_screen == "main":
                 current.update_frame() #updates the current plant object's animation and adds it to on_screen_sprites RenderQueue group
-                quit_button.update_frame()
+                
                 water_button.update_frame()
+                minigames_button.update_frame()
                 plants_button.update_frame()
+                quit_button.update_frame()
+        
         
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
         on_screen_ui.draw(screen)
