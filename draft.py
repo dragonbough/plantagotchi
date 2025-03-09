@@ -26,16 +26,17 @@ def switch_screen_to(screen):
         for item in on_screen_ui:
                 item.kill()
         if screen == "prev":
-                print(visited_screens)
                 last_original_screens = [screen for screen in visited_screens if screen != visited_screens[len(visited_screens)-1]]
                 current_screen = last_original_screens[len(last_original_screens)-1]
                 visited_screens.pop()
         else:
                 current_screen = screen 
                 visited_screens.append(screen) 
+        print(current_screen)
 
 on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
+on_screen_animations = RenderQueue()
 
 # generic gamesprite class which allows for the display of an element anywhere on screen 
 class GameSprite(pygame.sprite.Sprite):
@@ -69,6 +70,7 @@ class AnimSprite(GameSprite):
         def __init__(self, *args):
                 super().__init__(*args)
                 self.frame = 1
+                self.playing = False
                 
         def set_image(self):
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.frame) + self.file_format).convert_alpha(), self.size) #uses frames instead of name
@@ -79,19 +81,27 @@ class AnimSprite(GameSprite):
                 max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 if self.frame == max_frame:
                         self.frame = 1
+                        self.playing = False #only for the single animation functionality -- repeated animations work perfectly fine with this
                 else:
                         self.frame += 1 
                 self.set_image()
                 self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
                 self.group.add(self)
+                        
+        def play(self): #functionality for playing single animations -- must be used in combination with the on_screen_animations codeblock in the game rendering
+                self.playing = True
+                self.update_frame()  
                 
+waterAnim = AnimSprite("water_anim", (200, 200), (70, 40)) 
+waterAnim.group = on_screen_animations #water animation is part of the on_screen_animations group, unlike others
                 
 class UIElement(GameSprite): 
         def __init__(self, *args):
                 super().__init__(*args)
                 self.group = on_screen_ui
                 self.clickable = False
-        #actions each element will do once clicked
+                
+        #actions each UI element will do if perform() is called
         def perform(self):
                 if self.name == "quit_button":
                         pygame.quit()
@@ -102,8 +112,7 @@ class UIElement(GameSprite):
                 elif self.name == "minigames_button":
                         switch_screen_to("minigames")
                 elif self.name == "water_button":
-                        print ("watering your guy")
-                        
+                        waterAnim.play()
                 
 current = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current plant as a Plant object named "daisy"
 
@@ -159,12 +168,16 @@ while running:
                 quit_button.update_frame()
                 
         else:
-                back_button.update_frame()               
+                back_button.update_frame() #every screen other than the main will have a back button              
+        
+        for anim in on_screen_animations: #all animations scheduled to be playing will play
+                if anim.playing == True:
+                        anim.update_frame()
                 
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
+        on_screen_animations.draw(screen)
         on_screen_ui.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
-        print(current_screen)
         clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
         
 pygame.quit()
