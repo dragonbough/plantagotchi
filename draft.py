@@ -128,9 +128,17 @@ class UIElement(GameSprite):
                         switch_screen_to("minigames")
                 elif self.name == "water_button":
                         waterAnim.play()
+                elif self.name == "bonsai_select":
+                        print("not yet")
+                        #implementing the bonsai selection
+                        current = AnimSprite("bonsai", (200, 200), (70, 50))
+                        switch_screen_to("prev")
+                        #Sets the current sprite as the bonsai and would require the user to go back to the main screen to view it or i can set the screen back to main
                 
 current = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current plant as a Plant object named "daisy"
 
+bonsai_button = UIElement("bonsai_button", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
+bonsai_button.clickable = True
 
 water_button = UIElement("water_button", (60, 60), (10, 10))
 water_button.clickable = True
