@@ -181,6 +181,11 @@ while running:
                 minigames_button.update_frame()
                 plants_button.update_frame()
                 quit_button.update_frame()
+
+        elif current_screen == "plants":
+                back_button.update_frame()
+                
+                
                 
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
