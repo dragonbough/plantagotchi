@@ -6,19 +6,26 @@ pygame.init()
 
 def return_frames_count(directory):
         return len(os.listdir(directory)) 
+#returns number of frames/images in the sprite directory i assume
+
 
 screen_size = screen_width, screen_height = 300, 300
 screen = pygame.display.set_mode(screen_size)
 screen_center = screen_width / 2, screen_height /2 
 clock = pygame.time.Clock()
-        
+
+
 current_screen = None
 visited_screens = [] 
-        
+
+#Sets screen and clock settings, set an array of previous screens for backtracking
+
 class RenderQueue(pygame.sprite.Group):
         def __init__(self, *args):
                 pygame.sprite.RenderUpdates.__init__(self, *args)
-                
+
+
+
 def switch_screen_to(screen):
         global current_screen, visited_screens
         for item in on_screen_sprites:
