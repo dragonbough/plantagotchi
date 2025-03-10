@@ -40,10 +40,14 @@ def switch_screen_to(screen):
                 current_screen = screen 
                 visited_screens.append(screen) 
         print(current_screen)
+#Firstly, removes all sprites and UI elements. Then selects the last screen by excluding current screen and getting the last item
+#if the screen isn't previous the screen is switched to the one described in the parameter and the current is added to the list
 
 on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
 on_screen_animations = RenderQueue()
+
+#PLEASE DESCRIBE WHAT THIS DOES
 
 # generic gamesprite class which allows for the display of an element anywhere on screen 
 class GameSprite(pygame.sprite.Sprite):
