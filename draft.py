@@ -18,19 +18,20 @@ clock = pygame.time.Clock()
 current_screen = None
 visited_screens = [] 
 
-#Sets screen and clock settings, set an array of previous screens for backtracking
+#Sets screen and clock settings as well as an array of previous screens for backtracking
 
+#this is a queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
 class RenderQueue(pygame.sprite.Group):
         def __init__(self, *args):
                 pygame.sprite.RenderUpdates.__init__(self, *args)
-
-
 
 def switch_screen_to(screen):
         global current_screen, visited_screens
         for item in on_screen_sprites:
                 item.kill()
         for item in on_screen_ui:
+                item.kill()
+        for item in on_screen_animations:
                 item.kill()
         if screen == "prev":
                 last_original_screens = [screen for screen in visited_screens if screen != visited_screens[len(visited_screens)-1]]
@@ -63,12 +64,12 @@ class GameSprite(pygame.sprite.Sprite):
                 self.rect.x, self.rect.y = self.position                
                 self.group = on_screen_sprites
                 
-        def set_image(self):
+        def set_image(self): #this just sets the current image of the sprite to whatever the current self.NAME is
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position
                 
-        def update_frame(self):
+        def update_frame(self): #this just shows the image of the sprite, does not use the animation functionality seen in AnimSprite
                 self.set_image()
                 self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
                 self.group.add(self)
@@ -83,12 +84,12 @@ class AnimSprite(GameSprite):
                 self.frame = 1
                 self.playing = False
                 
-        def set_image(self):
+        def set_image(self): #this just sets the current image of the sprite to whatever the current self.FRAME (not self.name) is
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.frame) + self.file_format).convert_alpha(), self.size) #uses frames instead of name
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position
                 
-        def update_frame(self):
+        def update_frame(self): #updates the frame of the animated sprite and then adds it to the on_screen_sprites render queue
                 max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.set_image()
                 self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
@@ -105,10 +106,11 @@ class AnimSprite(GameSprite):
                 self.playing = True
                 self.update_frame()  
                 
+#on_screen_animations group, which handles single animations
 waterAnim = AnimSprite("water_anim", (200, 200), (70, 40)) 
-waterAnim.group = on_screen_animations #water animation is part of the on_screen_animations group, unlike others
+waterAnim.group = on_screen_animations 
 quitAnim = AnimSprite("quit_anim", screen_size, (0, 0)) 
-quitAnim.group = on_screen_animations
+quitAnim.group = on_screen_animations 
                 
 class UIElement(GameSprite): 
         def __init__(self, *args):
@@ -118,8 +120,10 @@ class UIElement(GameSprite):
                 
         #actions each UI element will do if perform() is called
         def perform(self):
+                # honestly you're right this needs to be restructured, maybe we can just have a dict of every name to their function and call that, 
+                # then we can define the functions ourselves?
                 if self.name == "quit_button":
-                        quitAnim.play()
+                        quitAnim.play() #.play() uses the self.playing functionality in AnimSprite so that the animation only plays once
                 elif self.name == "plants_button":
                         switch_screen_to("plants")
                 elif self.name == "back_button":
@@ -130,7 +134,8 @@ class UIElement(GameSprite):
                         waterAnim.play()
                 elif self.name == "bonsai_select":
                         print("not yet")
-                        #implementing the bonsai selection
+                        return #just for testing reasons mb
+                        #implementing the bonsai selection 
                         current = AnimSprite("bonsai", (200, 200), (70, 50))
                         switch_screen_to("prev")
                         #Sets the current sprite as the bonsai and would require the user to go back to the main screen to view it or i can set the screen back to main
@@ -177,13 +182,12 @@ while running:
                                         if element_x <= mouse_x <= element_x + element_width and element_y <= mouse_y <= element_y + element_height:
                                                 element.perform()
         
-        
         #main rendering stuff goes here:
 
         screen.fill("black") #background
         
         if current_screen == "main":
-                current.update_frame() #updates the current plant object's animation and adds it to on_screen_sprites RenderQueue group
+                current.update_frame() #updates the current plant object's animation and adds it to on_screen_sprites RenderQueue Group
                 
                 water_button.update_frame()
                 minigames_button.update_frame()
@@ -192,13 +196,11 @@ while running:
 
         elif current_screen == "plants":
                 back_button.update_frame()
-                
-                
-                
+                #maybe you want to add the bonsai_button.updateframe() here? you can select the bonsai on the "plants" screen
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
         
-        for anim in on_screen_animations: #all animations scheduled to be playing will play
+        for anim in on_screen_animations: #all animations scheduled to be playing (added to the on_screen_animations Rendergroup) will play
                 if anim.playing == True:
                         anim.update_frame()
                         print(anim.frame)
