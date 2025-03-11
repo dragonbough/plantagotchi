@@ -102,6 +102,26 @@ class AnimSprite(GameSprite):
                 self.playing = True
                 self.update_frame()  
                 
+#class plant(AnimSprite):
+        #def __init__(self, cruelty, bonding, *args):
+                #self.__cruelty = cruelty
+                #self.__bonding = bonding 
+                #super.__init__(*args)
+        #def access_cruelty(self):
+                #return self.__cruelty
+
+        #def access_bonding(self):
+                #return self.__bonding
+
+        #def update_cruelty(self, value):
+                #self.__cruelty = self.__cruelty + value
+
+        #def update_bonding(self, value):
+                #self.__bonding = self.__bonding + value
+
+        #def set_image(self):
+                
+                
 #on_screen_animations group, which handles single animations
 waterAnim = AnimSprite("water_anim", (200, 200), (70, 40)) 
 waterAnim.group = on_screen_animations 
