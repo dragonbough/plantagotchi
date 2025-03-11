@@ -103,7 +103,7 @@ class AnimSprite(GameSprite):
                 self.update_frame()  
                 
 #class plant(AnimSprite):
-        #def __init__(self, cruelty, bonding, *args):
+        #def __init__(self, cruelty, bonding, *args): ##surely this is needed so that we don't overwrite attributes with value of cruelty and bonding
                 #self.__cruelty = cruelty
                 #self.__bonding = bonding 
                 #super.__init__(*args)
