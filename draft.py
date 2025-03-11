@@ -33,10 +33,6 @@ def switch_screen_to(screen):
                 item.kill()
         for item in on_screen_animations:
                 item.kill()
-        if screen == "prev":
-                last_original_screens = [screen for screen in visited_screens if screen != visited_screens[len(visited_screens)-1]]
-                current_screen = last_original_screens[len(last_original_screens)-1]
-                visited_screens.pop()
         else:
                 current_screen = screen 
                 visited_screens.append(screen) 
@@ -127,14 +123,13 @@ class UIElement(GameSprite):
                 elif self.name == "plants_button":
                         switch_screen_to("plants")
                 elif self.name == "back_button":
-                        switch_screen_to("prev")
+                        switch_screen_to("main")
                 elif self.name == "minigames_button":
                         switch_screen_to("minigames")
                 elif self.name == "water_button":
                         waterAnim.play()
                 elif self.name == "bonsai_select":
                         print("not yet")
-                        return #just for testing reasons mb
                         #implementing the bonsai selection 
                         current = AnimSprite("bonsai", (200, 200), (70, 50))
                         switch_screen_to("prev")
@@ -142,8 +137,9 @@ class UIElement(GameSprite):
                 
 current = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current plant as a Plant object named "daisy"
 
-bonsai_button = UIElement("bonsai_button", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
-bonsai_button.clickable = True
+# bonsai_button = UIElement("bonsai_button", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
+# bonsai_button.clickable = True
+#just commenting it out for testing reasons mb
 
 water_button = UIElement("water_button", (60, 60), (10, 10))
 water_button.clickable = True
@@ -197,6 +193,10 @@ while running:
         elif current_screen == "plants":
                 back_button.update_frame()
                 #maybe you want to add the bonsai_button.updateframe() here? you can select the bonsai on the "plants" screen
+                
+        elif current_screen == "minigames":
+                current.update_frame()
+                back_button.update_frame()
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
         
