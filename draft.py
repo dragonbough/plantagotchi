@@ -20,11 +20,6 @@ visited_screens = []
 
 #Sets screen and clock settings as well as an array of previous screens for backtracking
 
-#this is a queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
-class RenderQueue(pygame.sprite.Group):
-        def __init__(self, *args):
-                pygame.sprite.RenderUpdates.__init__(self, *args)
-
 def switch_screen_to(screen):
         global current_screen, visited_screens
         for item in on_screen_sprites:
@@ -32,13 +27,18 @@ def switch_screen_to(screen):
         for item in on_screen_ui:
                 item.kill()
         for item in on_screen_animations:
-                item.kill()
-        else:
-                current_screen = screen 
-                visited_screens.append(screen) 
+                if item.name != "countdown_anim":
+                        item.kill()
+        current_screen = screen 
+        visited_screens.append(screen) 
         print(current_screen)
 #Firstly, removes all sprites and UI elements. Then selects the last screen by excluding current screen and getting the last item
 #if the screen isn't previous the screen is switched to the one described in the parameter and the current is added to the list
+
+#this is a queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
+class RenderQueue(pygame.sprite.Group):
+        def __init__(self, *args):
+                pygame.sprite.RenderUpdates.__init__(self, *args)
 
 on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
@@ -78,6 +78,7 @@ class AnimSprite(GameSprite):
         def __init__(self, *args):
                 super().__init__(*args)
                 self.frame = 1
+                self.max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.playing = False
                 
         def set_image(self): #this just sets the current image of the sprite to whatever the current self.FRAME (not self.name) is
@@ -86,11 +87,11 @@ class AnimSprite(GameSprite):
                 self.rect.x, self.rect.y = self.position
                 
         def update_frame(self): #updates the frame of the animated sprite and then adds it to the on_screen_sprites render queue
-                max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.set_image()
                 self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
                 self.group.add(self)
-                if self.frame == max_frame:
+                if self.frame == self.max_frame:
+                        print(f"max_frame: {self.max_frame}")
                         self.frame = 1 
                         if self.playing == True:
                                 self.playing = False #self.playing is only for animations that play once, recurring animations that don't change self.playing are fine
@@ -99,8 +100,9 @@ class AnimSprite(GameSprite):
                         self.frame += 1 
                                                 
         def play(self): #functionality for playing single animations -- must be used in combination with the on_screen_animations codeblock in the game rendering
+                self.frame = self.max_frame
+                self.update_frame()
                 self.playing = True
-                self.update_frame()  
                 
 #class plant(AnimSprite):
         #def __init__(self, cruelty, bonding, *args): ##surely this is needed so that we don't overwrite attributes with value of cruelty and bonding
@@ -127,6 +129,8 @@ waterAnim = AnimSprite("water_anim", (200, 200), (70, 40))
 waterAnim.group = on_screen_animations 
 quitAnim = AnimSprite("quit_anim", screen_size, (0, 0)) 
 quitAnim.group = on_screen_animations 
+countdownAnim = AnimSprite("countdown_anim", screen_size, (0, 0))
+countdownAnim.group = on_screen_animations
                 
 class UIElement(GameSprite): 
         def __init__(self, *args):
@@ -146,6 +150,9 @@ class UIElement(GameSprite):
                         switch_screen_to("main")
                 elif self.name == "minigames_button":
                         switch_screen_to("minigames")
+                elif self.name == "minigames_play_button":
+                        countdownAnim.play()
+                        switch_screen_to("basket_game")
                 elif self.name == "water_button":
                         waterAnim.play()
                 elif self.name == "bonsai_select":
@@ -157,6 +164,9 @@ class UIElement(GameSprite):
                 
 current = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current plant as a Plant object named "daisy"
 
+minigames_basket = GameSprite("minigames_basket", (100, 100), current.position)
+
+
 # bonsai_button = UIElement("bonsai_button", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
 # bonsai_button.clickable = True
 #just commenting it out for testing reasons mb
@@ -166,6 +176,12 @@ water_button.clickable = True
 
 minigames_button = UIElement("minigames_button", (60, 60), (10, 70))
 minigames_button.clickable = True
+
+minigames_play_button = UIElement("minigames_play_button", (60, 60))
+minigames_play_button.clickable = True
+
+minigames_basket_button = UIElement("minigames_basket_button", (60, 60))
+minigames_basket_button.clickable = False
 
 plants_button = UIElement("plants_button", (60,60), (10, 130))
 plants_button.clickable = True
@@ -215,8 +231,21 @@ while running:
                 #maybe you want to add the bonsai_button.updateframe() here? you can select the bonsai on the "plants" screen
                 
         elif current_screen == "minigames":
-                current.update_frame()
+                minigames_play_button.position = (10, 10)
+                minigames_basket_button.position = (64, 10)
+                minigames_play_button.update_frame()
+                minigames_basket_button.update_frame()
                 back_button.update_frame()
+                
+                #setting the position of the plant in advance of entering the game
+                current.position = (50, 50)
+                minigames_basket.position = current.position[0] + 60, current.position[1] - 60
+                #####
+        elif current_screen == "basket_game":
+                if countdownAnim.playing == "false":
+                        minigames_basket.update_frame()
+                        current.update_frame()
+                        back_button.update_frame()
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
         
@@ -233,6 +262,11 @@ while running:
         on_screen_ui.draw(screen)
         on_screen_animations.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
-        clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
+        if not on_screen_animations:
+                clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
+        elif countdownAnim in on_screen_animations:
+                clock.tick(1)
+        elif waterAnim in on_screen_animations:
+                clock.tick(10)
         
 pygame.quit()
