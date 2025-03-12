@@ -264,7 +264,7 @@ while running:
                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 50))
                 #####
         elif current_screen == "basket_game":
-                if countdownAnim not in on_screen_animations:
+                if countdownAnim not in on_screen_animations: #if countdown stops playing, we can start, and show the back button
                         start = True
                         back_button.update_frame()
                 else:
@@ -272,10 +272,12 @@ while running:
                 if start == True:
                         minigames_basket.update_frame()
                         current_plant.update_frame()
-                        if pygame.key.get_pressed()[pygame.K_a]:
+                        #checks for letter A or left arrow keyboard press, and moves left
+                        if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
                                 current_plant.move((-3,0))
                                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
-                        if pygame.key.get_pressed()[pygame.K_d]:
+                        #checks for letter D or right arrow keyboard press, and moves left
+                        if pygame.key.get_pressed()[pygame.K_d] or pygame.key.get_pressed()[pygame.K_RIGHT]:
                                 current_plant.move((3, 0))
                                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
         else:
