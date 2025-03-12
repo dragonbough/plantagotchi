@@ -1,6 +1,7 @@
 import pygame
 import os
 import pickle
+import sys
 
 pygame.init()
 
@@ -48,17 +49,24 @@ on_screen_animations = RenderQueue()
 
 # generic gamesprite class which allows for the display of an element anywhere on screen 
 class GameSprite(pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=(screen_center), file_format=".png"):
+        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png"):
                 pygame.sprite.Sprite.__init__(self)
                 self.name = name
                 self.file_format = file_format
                 self.directory = f"sprites/{self.name}/"
-                self.size = size
+                self.width = size[0]
+                self.height = size[1]
+                self.size = self.width, self.height
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
-                self.position = position
+                self.position_x = position[0]
+                self.position_y = position[1]
+                self.position = self.position_x, self.position_y 
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position                
                 self.group = on_screen_sprites
+                
+        def resize(self, new_width, new_height):
+                self.size = new_width, new_height
                 
         def set_image(self): #this just sets the current image of the sprite to whatever the current self.NAME is
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
@@ -72,6 +80,16 @@ class GameSprite(pygame.sprite.Sprite):
         
         def set_position(self, position):
                 self.position = position
+                self.position_x = self.position[0]
+                self.position_y = self.position[1]
+        
+        def move(self, index):
+                #im cheating here, im moving the image rectangle by the index, clamping it to the size of the screen, and then setting the position to its new position
+                self.rect.move_ip(index) 
+                self.rect.clamp_ip(screen.get_rect())
+                self.position_x = self.rect.x
+                self.position_y = self.rect.y 
+                self.position = self.position_x, self.position_y
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
 class AnimSprite(GameSprite):
@@ -103,6 +121,7 @@ class AnimSprite(GameSprite):
                 self.frame = self.max_frame
                 self.update_frame()
                 self.playing = True
+                
                 
 #class plant(AnimSprite):
         #def __init__(self, cruelty, bonding, *args): ##surely this is needed so that we don't overwrite attributes with value of cruelty and bonding
@@ -158,13 +177,13 @@ class UIElement(GameSprite):
                 elif self.name == "bonsai_select":
                         print("not yet")
                         #implementing the bonsai selection 
-                        current = AnimSprite("bonsai", (200, 200), (70, 50))
+                        current_plant = AnimSprite("bonsai", (200, 200), (70, 50))
                         switch_screen_to("prev")
-                        #Sets the current sprite as the bonsai and would require the user to go back to the main screen to view it or i can set the screen back to main
+                        #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it or i can set the screen back to main
                 
-current = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current plant as a Plant object named "daisy"
+current_plant = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current_plant plant as a Plant object named "daisy"
 
-minigames_basket = GameSprite("minigames_basket", (100, 100), current.position)
+minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
 
 # bonsai_button = UIElement("bonsai_button", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
@@ -219,7 +238,9 @@ while running:
         screen.fill("black") #background
         
         if current_screen == "main":
-                current.update_frame() #updates the current plant object's animation and adds it to on_screen_sprites RenderQueue Group
+                current_plant.resize(200, 200)
+                current_plant.set_position((70, 50))
+                current_plant.update_frame() #updates the current_plant plant object's animation and adds it to on_screen_sprites RenderQueue Group
                 
                 water_button.update_frame()
                 minigames_button.update_frame()
@@ -231,21 +252,32 @@ while running:
                 #maybe you want to add the bonsai_button.updateframe() here? you can select the bonsai on the "plants" screen
                 
         elif current_screen == "minigames":
-                minigames_play_button.position = (10, 10)
-                minigames_basket_button.position = (64, 10)
+                minigames_play_button.set_position((10, 10))
+                minigames_basket_button.set_position((64, 10))
                 minigames_play_button.update_frame()
                 minigames_basket_button.update_frame()
                 back_button.update_frame()
-                
+                start = False
                 #setting the position of the plant in advance of entering the game
-                current.position = (50, 50)
-                minigames_basket.position = current.position[0] + 60, current.position[1] - 60
+                current_plant.resize(95, 95)
+                current_plant.set_position((50, 200))
+                minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 50))
                 #####
         elif current_screen == "basket_game":
-                if countdownAnim.playing == "false":
-                        minigames_basket.update_frame()
-                        current.update_frame()
+                if countdownAnim not in on_screen_animations:
+                        start = True
                         back_button.update_frame()
+                else:
+                        back_button.kill()
+                if start == True:
+                        minigames_basket.update_frame()
+                        current_plant.update_frame()
+                        if pygame.key.get_pressed()[pygame.K_a]:
+                                current_plant.move((-3,0))
+                                minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
+                        if pygame.key.get_pressed()[pygame.K_d]:
+                                current_plant.move((3, 0))
+                                minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
         
@@ -257,16 +289,17 @@ while running:
                         anim.kill()
                         if anim.name == "quit_anim":
                                 pygame.quit()
+                                sys.exit()
                 
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
         on_screen_ui.draw(screen)
         on_screen_animations.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
-        if not on_screen_animations:
+        if current_screen == "basket_game":
+                clock.tick(30)
+        else:
                 clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
-        elif countdownAnim in on_screen_animations:
+        if countdownAnim in on_screen_animations:
                 clock.tick(1)
-        elif waterAnim in on_screen_animations:
-                clock.tick(10)
         
 pygame.quit()
