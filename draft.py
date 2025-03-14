@@ -2,6 +2,7 @@ import pygame
 import os
 import pickle
 import sys
+import random
 
 pygame.init()
 
@@ -14,6 +15,7 @@ screen_size = screen_width, screen_height = 300, 300
 screen = pygame.display.set_mode(screen_size)
 screen_center = screen_width / 2, screen_height /2 
 clock = pygame.time.Clock()
+prev_fps = []
 
 
 current_screen = None
@@ -44,6 +46,7 @@ class RenderQueue(pygame.sprite.Group):
 on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
 on_screen_animations = RenderQueue()
+on_screen_clones = RenderQueue()
 
 #PLEASE DESCRIBE WHAT THIS DOES
 
@@ -64,6 +67,8 @@ class GameSprite(pygame.sprite.Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position                
                 self.group = on_screen_sprites
+                self.clone = False
+                self.mask = pygame.mask.from_surface(self.image)
                 
         def resize(self, new_width, new_height):
                 self.size = new_width, new_height
@@ -75,7 +80,8 @@ class GameSprite(pygame.sprite.Sprite):
                 
         def update_frame(self): #this just shows the image of the sprite, does not use the animation functionality seen in AnimSprite
                 self.set_image()
-                self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
+                if self.clone == False:
+                        self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
                 self.group.add(self)
         
         def set_position(self, position):
@@ -109,7 +115,6 @@ class AnimSprite(GameSprite):
                 self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
                 self.group.add(self)
                 if self.frame == self.max_frame:
-                        print(f"max_frame: {self.max_frame}")
                         self.frame = 1 
                         if self.playing == True:
                                 self.playing = False #self.playing is only for animations that play once, recurring animations that don't change self.playing are fine
@@ -212,6 +217,7 @@ quit_button.clickable = True
 back_button = UIElement("back_button", (60, 60), (10, 230))
 back_button.clickable = True
 
+last_second = 0
 
 running = True
 
@@ -261,8 +267,11 @@ while running:
                 #setting the position of the plant in advance of entering the game
                 current_plant.resize(95, 95)
                 current_plant.set_position((50, 200))
-                minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 50))
+                minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
                 #####
+                score = 0
+                missed = 0
+                
         elif current_screen == "basket_game":
                 if countdownAnim not in on_screen_animations: #if countdown stops playing, we can start, and show the back button
                         start = True
@@ -280,6 +289,48 @@ while running:
                         if pygame.key.get_pressed()[pygame.K_d] or pygame.key.get_pressed()[pygame.K_RIGHT]:
                                 current_plant.move((3, 0))
                                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
+                                
+                        #spawns falling fruit in random position every two seconds, as a clone
+                        falling_fruit = GameSprite("bonsai", (50, 50), (random.randrange(0, screen_width), 0))
+                        falling_fruit.group = on_screen_clones
+                        seconds = round(pygame.time.get_ticks() / 1000)
+                        if seconds % 2 == 0:
+                                if seconds != last_second:
+                                        last_second = seconds
+                                        print (f"on_screen_clones: {[sprite.name for sprite in on_screen_clones]}")
+                                        print("spawn")
+                                        falling_fruit = GameSprite("bonsai", (50, 50), (random.randrange(0, screen_width-50), 0))
+                                        falling_fruit.group = on_screen_clones
+                                        falling_fruit.clone = True
+                                        falling_fruit.update_frame()
+                        
+                        #iterates over every clone on screen, and checks if its colliding with the mask of the basket (meaning the actual coloured pixels, not transparent part)
+                        for sprite in on_screen_clones:
+                                        # initial = sprite.position
+                                        colliding = pygame.sprite.spritecollideany(minigames_basket, on_screen_clones, pygame.sprite.collide_mask)
+                                        if colliding:
+                                                print("Caught!", colliding.name)
+                                                score += 1
+                                                print(score)
+                                                colliding.kill()
+                                        
+                                        if sprite.position_y > 230:
+                                                print("Missed!", sprite.name)
+                                                missed += 1
+                                                sprite.kill()
+                                        
+                                        if missed > 5:
+                                                print("Failed")
+                                                on_screen_clones.empty()
+                                                switch_screen_to("minigames")
+                                                
+                                        sprite.move((0, 1))
+                                        
+                                        if sprite in on_screen_clones:
+                                                sprite.update_frame()
+                                        
+                        on_screen_clones.draw(screen) #displays the clone
+
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
         
@@ -303,5 +354,14 @@ while running:
                 clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
         if countdownAnim in on_screen_animations:
                 clock.tick(1)
+                
+        fps = round(clock.get_fps(), 1)
+        if prev_fps:
+                if prev_fps[len(prev_fps)-1] == fps:
+                        prev_fps.pop()
+                else:
+                        print(f"{fps}FPS")
+        prev_fps.append(round(clock.get_fps(), 1)) 
+        #fps counter for testing reasons that only updates if the fps changes
         
 pygame.quit()
