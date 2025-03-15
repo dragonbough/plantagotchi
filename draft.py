@@ -32,6 +32,8 @@ def switch_screen_to(screen):
         for item in on_screen_animations:
                 if item.name != "countdown_anim":
                         item.kill()
+        for item in on_screen_clones:
+                item.kill()
         current_screen = screen 
         visited_screens.append(screen) 
         print(current_screen)
@@ -291,42 +293,47 @@ while running:
                                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
                                 
                         #spawns falling fruit in random position every two seconds, as a clone
-                        falling_fruit = GameSprite("bonsai", (50, 50), (random.randrange(0, screen_width), 0))
+                        falling_fruit = GameSprite(random.choice(["orange", "banana", "grape"]), (50, 50), (random.randrange(0, screen_width), 0))
                         falling_fruit.group = on_screen_clones
                         seconds = round(pygame.time.get_ticks() / 1000)
-                        if seconds % 2 == 0:
+                        if seconds % 1 == 0:
                                 if seconds != last_second:
                                         last_second = seconds
-                                        print (f"on_screen_clones: {[sprite.name for sprite in on_screen_clones]}")
-                                        print("spawn")
-                                        falling_fruit = GameSprite("bonsai", (50, 50), (random.randrange(0, screen_width-50), 0))
-                                        falling_fruit.group = on_screen_clones
-                                        falling_fruit.clone = True
-                                        falling_fruit.update_frame()
+                                        fruit = random.choice(["orange", "grape", "banana"]) #fruit is a random selection of these sprites
+                                        size = (40, 40)
+                                        #different size allocations for different fruit, if not, size is size default above
+                                        if fruit == "grape":
+                                                size = (20, 20)
+                                        elif fruit == "orange":
+                                                size = (40, 40)
+                                        falling_fruit = GameSprite(fruit, size, (random.randrange(0, screen_width-50), 0)) #creates falling_fruit sprite at random width across screen
+                                        falling_fruit.group = on_screen_clones #adding to clone group
+                                        falling_fruit.clone = True #defining as a clone
+                                        falling_fruit.update_frame() 
                         
                         #iterates over every clone on screen, and checks if its colliding with the mask of the basket (meaning the actual coloured pixels, not transparent part)
                         for sprite in on_screen_clones:
                                         # initial = sprite.position
                                         colliding = pygame.sprite.spritecollideany(minigames_basket, on_screen_clones, pygame.sprite.collide_mask)
-                                        if colliding:
+                                        if colliding: #if clone is colliding with minigames_basket, kill it and increment score by 1
                                                 print("Caught!", colliding.name)
                                                 score += 1
                                                 print(score)
                                                 colliding.kill()
                                         
-                                        if sprite.position_y > 230:
+                                        if sprite.position_y > 240: #if clone touches bottom of screen, kill it and increment missed score by 1
                                                 print("Missed!", sprite.name)
                                                 missed += 1
                                                 sprite.kill()
                                         
-                                        if missed > 5:
+                                        if missed > 5: #if missed score gets above limit, quit game
                                                 print("Failed")
                                                 on_screen_clones.empty()
                                                 switch_screen_to("minigames")
                                                 
-                                        sprite.move((0, 1))
+                                        sprite.move((0, 3)) #inch each clone down
                                         
-                                        if sprite in on_screen_clones:
+                                        if sprite in on_screen_clones: #if sprites have not been killed, update their frames
                                                 sprite.update_frame()
                                         
                         on_screen_clones.draw(screen) #displays the clone
