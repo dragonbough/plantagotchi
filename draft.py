@@ -14,6 +14,7 @@ def return_frames_count(directory):
 screen_size = screen_width, screen_height = 300, 300
 screen = pygame.display.set_mode(screen_size)
 screen_center = screen_width / 2, screen_height /2 
+screen_colour = "black" 
 clock = pygame.time.Clock()
 prev_fps = []
 
@@ -34,13 +35,14 @@ def switch_screen_to(screen):
                         item.kill()
         for item in on_screen_clones:
                 item.kill()
+        for item in on_screen_text:
+                item.kill()
         current_screen = screen 
         visited_screens.append(screen) 
         print(current_screen)
-#Firstly, removes all sprites and UI elements. Then selects the last screen by excluding current screen and getting the last item
-#if the screen isn't previous the screen is switched to the one described in the parameter and the current is added to the list
+#Removes all game objects from previous screen before changing current_screen
 
-#this is a queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
+#Queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
 class RenderQueue(pygame.sprite.Group):
         def __init__(self, *args):
                 pygame.sprite.RenderUpdates.__init__(self, *args)
@@ -49,23 +51,58 @@ on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
 on_screen_animations = RenderQueue()
 on_screen_clones = RenderQueue()
+on_screen_text = RenderQueue()
 
-#PLEASE DESCRIBE WHAT THIS DOES
 
-# generic gamesprite class which allows for the display of an element anywhere on screen 
-class GameSprite(pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png"):
-                pygame.sprite.Sprite.__init__(self)
+class GameObject():
+        def __init__(self, name, size=(50, 50), position=screen_center):
                 self.name = name
+                self.size = self.width, self.height = size[0], size[1]
+                self.position = self.position_x, self.position_y = position[0], position[1]
+                self.rect = pygame.Rect(self.position, self.size)
+                
+                
+class Text(GameObject, pygame.sprite.Sprite):
+        def __init__(self, name, font_size=15, colour="white", text="NULL", position=(screen_center)):
+                self.text = text 
+                self.font = pygame.font.Font(None, font_size)
+                self.size = self.font.size(self.text)
+                self.colour = colour
+                self.background = screen_colour
+                self.group = on_screen_text
+                super().__init__(name, self.size, position)
+                pygame.sprite.Sprite.__init__(self)
+                
+        def set_text(self, new_text):
+                self.text = new_text
+        
+        def set_font(self, font, size):
+                try:
+                        font_path = pygame.font.match_font(font)
+                except:
+                        print("Invalid font")
+                self.font = pygame.font.Font(font_path)
+        
+        def update_frame(self):
+                self.image = self.font.render(self.text, True, self.colour, self.background)
+                self.rect.x, self.rect.y = self.position_x, self.position_y
+                self.group.add(self)
+        
+        def set_bg_colour(self, colour):
+                if colour == "transparent":
+                        self.background = None
+                else:
+                        self.background = colour
+                
+                
+# generic gamesprite class which allows for the display of an element anywhere on screen 
+class GameSprite(GameObject, pygame.sprite.Sprite):
+        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png"):
+                super().__init__(name, size, position) 
+                pygame.sprite.Sprite.__init__(self)
                 self.file_format = file_format
                 self.directory = f"sprites/{self.name}/"
-                self.width = size[0]
-                self.height = size[1]
-                self.size = self.width, self.height
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
-                self.position_x = position[0]
-                self.position_y = position[1]
-                self.position = self.position_x, self.position_y 
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position                
                 self.group = on_screen_sprites
@@ -100,9 +137,9 @@ class GameSprite(pygame.sprite.Sprite):
                 self.position = self.position_x, self.position_y
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
-class AnimSprite(GameSprite):
-        def __init__(self, *args):
-                super().__init__(*args)
+class AnimSprite(GameSprite, pygame.sprite.Sprite):
+        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png"):
+                super().__init__(name, size, position, file_format)
                 self.frame = 1
                 self.max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.playing = False
@@ -128,7 +165,7 @@ class AnimSprite(GameSprite):
                 self.frame = self.max_frame
                 self.update_frame()
                 self.playing = True
-                
+        
                 
 #class plant(AnimSprite):
         #def __init__(self, cruelty, bonding, *args): ##surely this is needed so that we don't overwrite attributes with value of cruelty and bonding
@@ -149,14 +186,6 @@ class AnimSprite(GameSprite):
 
         #def set_image(self):
                 
-                
-#on_screen_animations group, which handles single animations
-waterAnim = AnimSprite("water_anim", (200, 200), (70, 40)) 
-waterAnim.group = on_screen_animations 
-quitAnim = AnimSprite("quit_anim", screen_size, (0, 0)) 
-quitAnim.group = on_screen_animations 
-countdownAnim = AnimSprite("countdown_anim", screen_size, (0, 0))
-countdownAnim.group = on_screen_animations
                 
 class UIElement(GameSprite): 
         def __init__(self, *args):
@@ -187,15 +216,32 @@ class UIElement(GameSprite):
                         current_plant = AnimSprite("bonsai", (200, 200), (70, 50))
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it or i can set the screen back to main
-                
+           
+           
+           
+          
+     
+#SPRITES #################################################################
+
 current_plant = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
 
-# bonsai_button = UIElement("bonsai_button", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
-# bonsai_button.clickable = True
-#just commenting it out for testing reasons mb
+#ANIMATIONS ###############################################################
+
+waterAnim = AnimSprite("water_anim", (200, 200), (70, 40)) 
+waterAnim.group = on_screen_animations 
+quitAnim = AnimSprite("quit_anim", screen_size, (0, 0)) 
+quitAnim.group = on_screen_animations 
+countdownAnim = AnimSprite("countdown_anim", screen_size, (0, 0))
+countdownAnim.group = on_screen_animations
+
+
+#BUTTONS ##################################################################
+
+bonsai_button = UIElement("bonsai", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
+bonsai_button.clickable = True
 
 water_button = UIElement("water_button", (60, 60), (10, 10))
 water_button.clickable = True
@@ -219,13 +265,24 @@ quit_button.clickable = True
 back_button = UIElement("back_button", (60, 60), (10, 230))
 back_button.clickable = True
 
+
+#TEXT ######################################################################
+
+plant_name = Text("plant_name", 40, "white", current_plant.name, (current_plant.position_x + 72.5, current_plant.position_y - 30))
+plant_name.set_bg_colour("transparent")
+
+############################################################################
+
 last_second = 0
 
 running = True
 
 switch_screen_to("main")
 
+# MAIN GAME LOOP ###########################################################
+
 while running:
+        #EVENTS ###################################################
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                         running = False
@@ -241,11 +298,13 @@ while running:
                                         if element_x <= mouse_x <= element_x + element_width and element_y <= mouse_y <= element_y + element_height:
                                                 element.perform()
         
-        #main rendering stuff goes here:
-
-        screen.fill("black") #background
+        screen.fill(screen_colour) 
         
         if current_screen == "main":
+                if waterAnim in on_screen_animations:
+                        plant_name.kill()
+                else:
+                        plant_name.update_frame()
                 current_plant.resize(200, 200)
                 current_plant.set_position((70, 50))
                 current_plant.update_frame() #updates the current_plant plant object's animation and adds it to on_screen_sprites RenderQueue Group
@@ -257,7 +316,7 @@ while running:
 
         elif current_screen == "plants":
                 back_button.update_frame()
-                #maybe you want to add the bonsai_button.updateframe() here? you can select the bonsai on the "plants" screen
+                #maybe you want to add the bonsai_button.update_frame() here? you can select the bonsai on the "plants" screen
                 
         elif current_screen == "minigames":
                 minigames_play_button.set_position((10, 10))
@@ -266,13 +325,17 @@ while running:
                 minigames_basket_button.update_frame()
                 back_button.update_frame()
                 start = False
+                
                 #setting the position of the plant in advance of entering the game
                 current_plant.resize(95, 95)
                 current_plant.set_position((50, 200))
                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
                 #####
                 score = 0
+                score_text = Text("score", 30, "white", str(score), (10, 10))
                 missed = 0
+                
+        # BASKET MINIGAME #############################################
                 
         elif current_screen == "basket_game":
                 if countdownAnim not in on_screen_animations: #if countdown stops playing, we can start, and show the back button
@@ -281,8 +344,12 @@ while running:
                 else:
                         back_button.kill()
                 if start == True:
+                        
+                        score_text.set_text(str(score))
+                        score_text.update_frame()
                         minigames_basket.update_frame()
                         current_plant.update_frame()
+                        
                         #checks for letter A or left arrow keyboard press, and moves left
                         if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
                                 current_plant.move((-3,0))
@@ -337,6 +404,8 @@ while running:
                                                 sprite.update_frame()
                                         
                         on_screen_clones.draw(screen) #displays the clone
+                        
+        #####################################################################################
 
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
@@ -344,17 +413,20 @@ while running:
         for anim in on_screen_animations: #all animations scheduled to be playing (added to the on_screen_animations Rendergroup) will play
                 if anim.playing == True:
                         anim.update_frame()
-                        print(anim.frame)
                 else:
                         anim.kill()
                         if anim.name == "quit_anim":
                                 pygame.quit()
                                 sys.exit()
                 
+        #RENDERING GROUPS ###################################################
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
         on_screen_ui.draw(screen)
         on_screen_animations.draw(screen)
+        on_screen_text.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
+        
+        #FPS SETTINGS #####################################################
         if current_screen == "basket_game":
                 clock.tick(30)
         else:
@@ -362,6 +434,7 @@ while running:
         if countdownAnim in on_screen_animations:
                 clock.tick(1)
                 
+        #DEBUG STUFF ########################################################
         fps = round(clock.get_fps(), 1)
         if prev_fps:
                 if prev_fps[len(prev_fps)-1] == fps:
