@@ -483,7 +483,7 @@ while running:
         if current_screen == "basket_game":
                 clock.tick(30)
         else:
-                clock.tick(10) #limits game to 5fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
+                clock.tick(30) #limits game to 10fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
         if countdownAnim in on_screen_animations:
                 clock.tick(1)
                 
