@@ -39,7 +39,6 @@ def switch_screen_to(screen):
                 item.kill()
         current_screen = screen 
         visited_screens.append(screen) 
-        print(current_screen)
 #Removes all game objects from previous screen before changing current_screen
 
 #Queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
@@ -47,6 +46,7 @@ class RenderQueue(pygame.sprite.Group):
         def __init__(self, *args):
                 pygame.sprite.RenderUpdates.__init__(self, *args)
 
+cursors = RenderQueue()
 on_screen_sprites = RenderQueue()
 on_screen_ui = RenderQueue()
 on_screen_animations = RenderQueue()
@@ -70,6 +70,7 @@ class Text(GameObject, pygame.sprite.Sprite):
                 self.colour = colour
                 self.background = screen_colour
                 self.group = on_screen_text
+                self.static = False
                 super().__init__(name, self.size, position)
                 pygame.sprite.Sprite.__init__(self)
                 
@@ -84,6 +85,9 @@ class Text(GameObject, pygame.sprite.Sprite):
                 self.font = pygame.font.Font(font_path)
         
         def update_frame(self):
+                if self.static == True:
+                        if self in self.group:
+                                return
                 self.image = self.font.render(self.text, True, self.colour, self.background)
                 self.rect.x, self.rect.y = self.position_x, self.position_y
                 self.group.add(self)
@@ -123,10 +127,14 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                         self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
                 self.group.add(self)
         
-        def set_position(self, position):
-                self.position = position
-                self.position_x = self.position[0]
-                self.position_y = self.position[1]
+        def set_position(self, position, center=False):
+                if center == False:
+                        self.position = position
+                        self.position_x = self.position[0]
+                        self.position_y = self.position[1]
+                else:
+                        self.rect.center = position
+                        self.position = self.position_x, self.position_y = self.rect.x, self.rect.y
         
         def move(self, index):
                 #im cheating here, im moving the image rectangle by the index, clamping it to the size of the screen, and then setting the position to its new position
@@ -211,7 +219,6 @@ class UIElement(GameSprite):
                 elif self.name == "water_button":
                         waterAnim.play()
                 elif self.name == "bonsai_select":
-                        print("not yet")
                         #implementing the bonsai selection 
                         current_plant = AnimSprite("bonsai", (200, 200), (70, 50))
                         switch_screen_to("prev")
@@ -269,19 +276,54 @@ back_button.clickable = True
 #TEXT ######################################################################
 
 plant_name = Text("plant_name", 40, "white", current_plant.name, (current_plant.position_x + 72.5, current_plant.position_y - 30))
+plant_name.static = True
 plant_name.set_bg_colour("transparent")
+
+debug_text = Text("debug", 20, "red", "DEBUG MODE TRUE", (165, 10))
+debug_text.static = True
+debug_text.set_bg_colour("blue")
+
+#OTHER #####################################################################
+cursor = GameSprite("cursor", (30, 30))
+cursor.group = cursors
+on_hover_cursor = GameSprite("on_hover_cursor", (30, 30))
+on_hover_cursor.group = cursors
 
 ############################################################################
 
 last_second = 0
 
 running = True
+debug_mode = False
+
+pygame.mouse.set_visible(False)
 
 switch_screen_to("main")
 
 # MAIN GAME LOOP ###########################################################
 
 while running:
+        
+        #CURSOR #####################################################
+        
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        hovering = []
+        for element in on_screen_ui:
+                if element.clickable:
+                        element_x, element_y = element.position
+                        element_width, element_height = element.size
+                        if element_x <= mouse_x <= element_x + element_width and element_y <= mouse_y <= element_y + element_height:
+                                hovering.append(True)
+        
+        if not hovering:
+                on_hover_cursor.kill()
+                cursor.set_position(pygame.mouse.get_pos(), True)
+                cursor.update_frame()
+        elif hovering:
+                cursor.kill()
+                on_hover_cursor.set_position(pygame.mouse.get_pos(), True)
+                on_hover_cursor.update_frame()
+        
         #EVENTS ###################################################
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -297,6 +339,12 @@ while running:
                                         element_width, element_height = element.size
                                         if element_x <= mouse_x <= element_x + element_width and element_y <= mouse_y <= element_y + element_height:
                                                 element.perform()
+                
+                if event.type == pygame.KEYUP:
+                        if event.key == pygame.K_F7:
+                                debug_mode = not debug_mode
+                                if debug_mode == False:
+                                        debug_text.kill()
         
         screen.fill(screen_colour) 
         
@@ -315,10 +363,15 @@ while running:
                 quit_button.update_frame()
 
         elif current_screen == "plants":
+                # PLANT SELECTION FUNCTIONALITY HERE
                 back_button.update_frame()
                 #maybe you want to add the bonsai_button.update_frame() here? you can select the bonsai on the "plants" screen
                 
         elif current_screen == "minigames":
+                current_plant.resize(200, 200)
+                current_plant.set_position((100, 50))
+                current_plant.update_frame() 
+                
                 minigames_play_button.set_position((10, 10))
                 minigames_basket_button.set_position((64, 10))
                 minigames_play_button.update_frame()
@@ -333,7 +386,8 @@ while running:
                 #####
                 score = 0
                 score_text = Text("score", 30, "white", str(score), (10, 10))
-                missed = 0
+                missed = 5
+                missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (280, 10))
                 
         # BASKET MINIGAME #############################################
                 
@@ -343,10 +397,12 @@ while running:
                         back_button.update_frame()
                 else:
                         back_button.kill()
-                if start == True:
+                if start == True and missed > 0:
                         
                         score_text.set_text(str(score))
                         score_text.update_frame()
+                        missed_text.set_text(str(missed))
+                        missed_text.update_frame()
                         minigames_basket.update_frame()
                         current_plant.update_frame()
                         
@@ -383,18 +439,14 @@ while running:
                                         # initial = sprite.position
                                         colliding = pygame.sprite.spritecollideany(minigames_basket, on_screen_clones, pygame.sprite.collide_mask)
                                         if colliding: #if clone is colliding with minigames_basket, kill it and increment score by 1
-                                                print("Caught!", colliding.name)
                                                 score += 1
-                                                print(score)
                                                 colliding.kill()
                                         
                                         if sprite.position_y > 240: #if clone touches bottom of screen, kill it and increment missed score by 1
-                                                print("Missed!", sprite.name)
-                                                missed += 1
+                                                missed -= 1
                                                 sprite.kill()
                                         
-                                        if missed > 5: #if missed score gets above limit, quit game
-                                                print("Failed")
+                                        if missed < 1: #if missed score gets above limit, quit game
                                                 on_screen_clones.empty()
                                                 switch_screen_to("minigames")
                                                 
@@ -424,6 +476,7 @@ while running:
         on_screen_ui.draw(screen)
         on_screen_animations.draw(screen)
         on_screen_text.draw(screen)
+        cursors.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
         
         #FPS SETTINGS #####################################################
@@ -435,13 +488,16 @@ while running:
                 clock.tick(1)
                 
         #DEBUG STUFF ########################################################
-        fps = round(clock.get_fps(), 1)
-        if prev_fps:
-                if prev_fps[len(prev_fps)-1] == fps:
-                        prev_fps.pop()
-                else:
-                        print(f"{fps}FPS")
-        prev_fps.append(round(clock.get_fps(), 1)) 
-        #fps counter for testing reasons that only updates if the fps changes
+        
+        if debug_mode == True:
+                debug_text.update_frame()
+                fps = round(clock.get_fps(), 1)
+                if prev_fps:
+                        if prev_fps[len(prev_fps)-1] == fps:
+                                prev_fps.pop()
+                        else:
+                                print(f"{fps}FPS")
+                prev_fps.append(round(clock.get_fps(), 1)) 
+                #fps counter for testing reasons that only updates if the fps changes
         
 pygame.quit()
