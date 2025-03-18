@@ -356,7 +356,7 @@ while running:
         screen.fill(screen_colour) 
         
         if current_screen == "main":
-                if waterAnim in on_screen_animations:
+                if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
                         plant_name.kill()
                 else:
                         plant_name.update_frame()
