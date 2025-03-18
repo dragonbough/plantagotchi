@@ -206,6 +206,8 @@ class UIElement(GameSprite):
                 # honestly you're right this needs to be restructured, maybe we can just have a dict of every name to their function and call that, 
                 # then we can define the functions ourselves?
                 if self.name == "quit_button":
+                        global show_cursor
+                        show_cursor = False
                         quitAnim.play() #.play() uses the self.playing functionality in AnimSprite so that the animation only plays once
                 elif self.name == "plants_button":
                         switch_screen_to("plants")
@@ -297,6 +299,7 @@ running = True
 debug_mode = False
 
 pygame.mouse.set_visible(False)
+show_cursor = True
 
 switch_screen_to("main")
 
@@ -306,23 +309,27 @@ while running:
         
         #CURSOR #####################################################
         
-        mouse_x, mouse_y = pygame.mouse.get_pos()
         hovering = []
-        for element in on_screen_ui:
-                if element.clickable:
-                        element_x, element_y = element.position
-                        element_width, element_height = element.size
-                        if element_x <= mouse_x <= element_x + element_width and element_y <= mouse_y <= element_y + element_height:
-                                hovering.append(True)
         
-        if not hovering:
-                on_hover_cursor.kill()
-                cursor.set_position(pygame.mouse.get_pos(), True)
-                cursor.update_frame()
-        elif hovering:
-                cursor.kill()
-                on_hover_cursor.set_position(pygame.mouse.get_pos(), True)
-                on_hover_cursor.update_frame()
+        if pygame.mouse.get_focused():
+                mouse_x, mouse_y = pygame.mouse.get_pos()
+                for element in on_screen_ui:
+                        if element.clickable:
+                                element_x, element_y = element.position
+                                element_width, element_height = element.size
+                                if element_x <= mouse_x <= element_x + element_width and element_y <= mouse_y <= element_y + element_height:
+                                        hovering.append(True)
+        
+                if not hovering:
+                        on_hover_cursor.kill()
+                        cursor.set_position(pygame.mouse.get_pos(), True)
+                        cursor.update_frame()
+                elif hovering:
+                        cursor.kill()
+                        on_hover_cursor.set_position(pygame.mouse.get_pos(), True)
+                        on_hover_cursor.update_frame()
+        else:
+                cursors.empty()
         
         #EVENTS ###################################################
         for event in pygame.event.get():
@@ -365,7 +372,7 @@ while running:
         elif current_screen == "plants":
                 # PLANT SELECTION FUNCTIONALITY HERE
                 back_button.update_frame()
-                #maybe you want to add the bonsai_button.update_frame() here? you can select the bonsai on the "plants" screen
+                #maybe you want to add the bonsai_button.update_frame() here? 
                 
         elif current_screen == "minigames":
                 current_plant.resize(200, 200)
@@ -396,6 +403,7 @@ while running:
                         start = True
                         back_button.update_frame()
                 else:
+                        cursors.empty()
                         back_button.kill()
                 if start == True and missed > 0:
                         
@@ -476,7 +484,8 @@ while running:
         on_screen_ui.draw(screen)
         on_screen_animations.draw(screen)
         on_screen_text.draw(screen)
-        cursors.draw(screen)
+        if show_cursor == True:
+                cursors.draw(screen)
         pygame.display.flip() #update display (required to see changes made on the screen)
         
         #FPS SETTINGS #####################################################
@@ -486,6 +495,8 @@ while running:
                 clock.tick(30) #limits game to 10fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
         if countdownAnim in on_screen_animations:
                 clock.tick(1)
+        if quitAnim in on_screen_animations:
+                clock.tick(15)
                 
         #DEBUG STUFF ########################################################
         
