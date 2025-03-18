@@ -61,6 +61,25 @@ class GameObject():
                 self.position = self.position_x, self.position_y = position[0], position[1]
                 self.rect = pygame.Rect(self.position, self.size)
                 
+        def set_position(self, position, center=False):
+                if center == False:
+                        self.position = position
+                        self.position_x = self.position[0]
+                        self.position_y = self.position[1]
+                else:
+                        self.rect.center = position
+                        self.position = self.position_x, self.position_y = self.rect.x, self.rect.y
+        
+        def move(self, index):
+                #im cheating here, im moving the image rectangle by the index, clamping it to the size of the screen, and then setting the position to its new position
+                self.rect.move_ip(index) 
+                self.rect.clamp_ip(screen.get_rect())
+                self.position_x = self.rect.x
+                self.position_y = self.rect.y 
+                self.position = self.position_x, self.position_y
+        
+        def resize(self, new_width, new_height):
+                self.size = new_width, new_height
                 
 class Text(GameObject, pygame.sprite.Sprite):
         def __init__(self, name, font_size=15, colour="white", text="NULL", position=(screen_center)):
@@ -113,8 +132,6 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 self.clone = False
                 self.mask = pygame.mask.from_surface(self.image)
                 
-        def resize(self, new_width, new_height):
-                self.size = new_width, new_height
                 
         def set_image(self): #this just sets the current image of the sprite to whatever the current self.NAME is
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
@@ -126,23 +143,6 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 if self.clone == False:
                         self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
                 self.group.add(self)
-        
-        def set_position(self, position, center=False):
-                if center == False:
-                        self.position = position
-                        self.position_x = self.position[0]
-                        self.position_y = self.position[1]
-                else:
-                        self.rect.center = position
-                        self.position = self.position_x, self.position_y = self.rect.x, self.rect.y
-        
-        def move(self, index):
-                #im cheating here, im moving the image rectangle by the index, clamping it to the size of the screen, and then setting the position to its new position
-                self.rect.move_ip(index) 
-                self.rect.clamp_ip(screen.get_rect())
-                self.position_x = self.rect.x
-                self.position_y = self.rect.y 
-                self.position = self.position_x, self.position_y
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
 class AnimSprite(GameSprite, pygame.sprite.Sprite):
@@ -281,11 +281,16 @@ plant_name = Text("plant_name", 40, "white", current_plant.name, (current_plant.
 plant_name.static = True
 plant_name.set_bg_colour("transparent")
 
+score_screen_text = Text("score_screen_text", 40, "white", "achieved a score of:", screen_center)
+score_screen_text.static = True
+score_screen_text.set_position((screen_center[0], screen_center[1]-10), True)
+
 debug_text = Text("debug", 20, "red", "DEBUG MODE TRUE", (165, 10))
 debug_text.static = True
 debug_text.set_bg_colour("blue")
 
 #OTHER #####################################################################
+
 cursor = GameSprite("cursor", (30, 30))
 cursor.group = cursors
 on_hover_cursor = GameSprite("on_hover_cursor", (30, 30))
@@ -294,12 +299,13 @@ on_hover_cursor.group = cursors
 ############################################################################
 
 last_second = 0
+mouse_reset_time = 1000 #1000 ms -- 1 second
 
 running = True
 debug_mode = False
 
-pygame.mouse.set_visible(False)
-show_cursor = True
+pygame.mouse.set_visible(False) #hide real cursor
+show_cursor = True #show custom cursor
 
 switch_screen_to("main")
 
@@ -311,6 +317,17 @@ while running:
         
         hovering = []
         
+        # functionality to hide mouse after a second of inactivity 
+        if pygame.mouse.get_rel() == (0, 0):
+                mouse_reset_time -= clock.get_time()
+                if mouse_reset_time < 0:
+                        show_cursor = False
+        else:
+                mouse_reset_time = 1000
+                show_cursor = True 
+                      
+        pygame.mouse.get_rel()
+        
         if pygame.mouse.get_focused():
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 for element in on_screen_ui:
@@ -320,13 +337,15 @@ while running:
                                 if element_x <= mouse_x <= element_x + element_width and element_y <= mouse_y <= element_y + element_height:
                                         hovering.append(True)
         
+                mouse_pos = mouse_x, mouse_y = pygame.mouse.get_pos()
+                mouse_offset = mouse_offset_x, mouse_offset_y = 3, 10
                 if not hovering:
                         on_hover_cursor.kill()
-                        cursor.set_position(pygame.mouse.get_pos(), True)
+                        cursor.set_position((mouse_x+mouse_offset_x, mouse_y+mouse_offset_y), True)
                         cursor.update_frame()
                 elif hovering:
                         cursor.kill()
-                        on_hover_cursor.set_position(pygame.mouse.get_pos(), True)
+                        on_hover_cursor.set_position((mouse_x+mouse_offset_x, mouse_y+mouse_offset_y), True)
                         on_hover_cursor.update_frame()
         else:
                 cursors.empty()
@@ -356,13 +375,17 @@ while running:
         screen.fill(screen_colour) 
         
         if current_screen == "main":
-                if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
-                        plant_name.kill()
-                else:
-                        plant_name.update_frame()
+                
                 current_plant.resize(200, 200)
                 current_plant.set_position((70, 50))
                 current_plant.update_frame() #updates the current_plant plant object's animation and adds it to on_screen_sprites RenderQueue Group
+                
+                if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
+                        show_cursor = False
+                        plant_name.kill()
+                else:
+                        plant_name.set_position((current_plant.position_x + 72.5, current_plant.position_y - 30))
+                        plant_name.update_frame()
                 
                 water_button.update_frame()
                 minigames_button.update_frame()
@@ -383,6 +406,7 @@ while running:
                 minigames_basket_button.set_position((64, 10))
                 minigames_play_button.update_frame()
                 minigames_basket_button.update_frame()
+                back_button.set_position((10, 230))
                 back_button.update_frame()
                 start = False
                 
@@ -456,7 +480,7 @@ while running:
                                         
                                         if missed < 1: #if missed score gets above limit, quit game
                                                 on_screen_clones.empty()
-                                                switch_screen_to("minigames")
+                                                switch_screen_to("score")
                                                 
                                         sprite.move((0, 3)) #inch each clone down
                                         
@@ -464,6 +488,19 @@ while running:
                                                 sprite.update_frame()
                                         
                         on_screen_clones.draw(screen) #displays the clone
+                        
+        elif current_screen == "score":
+                current_plant.resize(40, 40)
+                current_plant.set_position((screen_center[0], screen_center[1] - 80), True)
+                current_plant.update_frame()
+                plant_name.set_position((screen_center[0], screen_center[1] - 40), True)
+                plant_name.update_frame()
+                score_screen_text.update_frame()
+                score_text.resize(80, 80)
+                score_text.set_position((screen_center[0], screen_center[1] + 40), True)
+                score_text.update_frame()
+                back_button.set_position((screen_center[0], screen_center[1] + 95), True)
+                back_button.update_frame()
                         
         #####################################################################################
 
@@ -480,12 +517,20 @@ while running:
                                 sys.exit()
                 
         #RENDERING GROUPS ###################################################
+        
+        if debug_mode == True:
+                i = 50
+                for sprite in on_screen_ui:
+                        pygame.draw.rect(screen, (i, i, i), sprite.rect)
+                        i+= 30
+        
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
         on_screen_ui.draw(screen)
         on_screen_animations.draw(screen)
         on_screen_text.draw(screen)
         if show_cursor == True:
                 cursors.draw(screen)
+                
         pygame.display.flip() #update display (required to see changes made on the screen)
         
         #FPS SETTINGS #####################################################
@@ -509,6 +554,7 @@ while running:
                         else:
                                 print(f"{fps}FPS")
                 prev_fps.append(round(clock.get_fps(), 1)) 
+                
                 #fps counter for testing reasons that only updates if the fps changes
         
 pygame.quit()
