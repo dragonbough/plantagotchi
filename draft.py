@@ -16,6 +16,7 @@ screen = pygame.display.set_mode(screen_size)
 screen_center = screen_width / 2, screen_height /2 
 screen_colour = "black" 
 clock = pygame.time.Clock()
+game_fps = 60
 prev_fps = []
 
 
@@ -146,11 +147,13 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
 class AnimSprite(GameSprite, pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png"):
+        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png", fps=10):
                 super().__init__(name, size, position, file_format)
                 self.frame = 1
                 self.max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.playing = False
+                self.fps = 1000 / fps
+                self.previous_time = 0
                 
         def set_image(self): #this just sets the current image of the sprite to whatever the current self.FRAME (not self.name) is
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.frame) + self.file_format).convert_alpha(), self.size) #uses frames instead of name
@@ -161,13 +164,17 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 self.set_image()
                 self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
                 self.group.add(self)
-                if self.frame == self.max_frame:
-                        self.frame = 1 
-                        if self.playing == True:
-                                self.playing = False #self.playing is only for animations that play once, recurring animations that don't change self.playing are fine
-                        
-                else:
-                        self.frame += 1 
+                #fps manager
+                current_time = pygame.time.get_ticks()  # Get the current time
+                if current_time - self.previous_time >= self.fps: #checks if time between previous update and current time is more than the fps -- if so, updates
+                        self.previous_time = current_time #updates time of previous update 
+                        if self.frame == self.max_frame:
+                                self.frame = 1 
+                                if self.playing == True:
+                                        self.playing = False #self.playing is only for animations that play once, recurring animations that don't change self.playing are fine
+                                
+                        else:
+                                self.frame += 1 
                                                 
         def play(self): #functionality for playing single animations -- must be used in combination with the on_screen_animations codeblock in the game rendering
                 self.frame = self.max_frame
@@ -491,6 +498,7 @@ while running:
                         on_screen_clones.draw(screen) #displays the clone
                         
         elif current_screen == "score":
+                #layout for each element on screen
                 current_plant.resize(40, 40)
                 current_plant.set_position((screen_center[0], screen_center[1] - 80), True)
                 current_plant.update_frame()
@@ -538,7 +546,7 @@ while running:
         if current_screen == "basket_game":
                 clock.tick(30)
         else:
-                clock.tick(30) #limits game to 10fps -- i need to keep the game at decent fps while also limiting fps of animation, how?
+                clock.tick(game_fps)
         if countdownAnim in on_screen_animations:
                 clock.tick(1)
         if quitAnim in on_screen_animations:
