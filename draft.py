@@ -16,8 +16,7 @@ screen = pygame.display.set_mode(screen_size)
 screen_center = screen_width / 2, screen_height /2 
 screen_colour = "black" 
 clock = pygame.time.Clock()
-game_fps = 60
-prev_fps = []
+game_fps = 30
 
 
 current_screen = None
@@ -294,9 +293,12 @@ score_screen_text = Text("score_screen_text", 40, "white", "achieved a score of:
 score_screen_text.static = True
 score_screen_text.set_position((screen_center[0], screen_center[1]-10), True)
 
-debug_text = Text("debug", 20, "red", "DEBUG MODE TRUE", (165, 10))
+debug_text = Text("debug", 20, "green", "DEBUG MODE TRUE", (165, 10))
 debug_text.static = True
-debug_text.set_bg_colour("blue")
+debug_text.set_bg_colour("black")
+
+fps_counter = Text("fps_counter", 20, "green", "FPS: 0", (237.5, 22.5))
+fps_counter.set_bg_colour("black")
 
 #OTHER #####################################################################
 
@@ -380,6 +382,7 @@ while running:
                                 debug_mode = not debug_mode
                                 if debug_mode == False:
                                         debug_text.kill()
+                                        fps_counter.kill()
         
         screen.fill(screen_colour) 
         
@@ -553,12 +556,8 @@ while running:
         if debug_mode == True:
                 debug_text.update_frame()
                 fps = round(clock.get_fps(), 1)
-                if prev_fps:
-                        if prev_fps[len(prev_fps)-1] == fps:
-                                prev_fps.pop()
-                        else:
-                                print(f"{fps}FPS")
-                prev_fps.append(round(clock.get_fps(), 1)) 
+                fps_counter.set_text(f"FPS:{fps}")
+                fps_counter.update_frame() 
                 
                 #fps counter for testing reasons that only updates if the fps changes
         
