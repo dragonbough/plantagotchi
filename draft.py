@@ -16,8 +16,8 @@ screen = pygame.display.set_mode(screen_size)
 screen_center = screen_width / 2, screen_height /2 
 screen_colour = "black" 
 clock = pygame.time.Clock()
-game_fps = 30
-
+game_fps = 60
+delta = 1
 
 current_screen = None
 visited_screens = [] 
@@ -334,7 +334,8 @@ while running:
                 if mouse_reset_time < 0:
                         show_cursor = False
         else:
-                mouse_reset_time = 1000
+                mouse_reset_time = 3 #time before cursor disappears when idle, in seconds
+                mouse_reset_time *= 1000 #time is converted into miliseconds
                 show_cursor = True 
                       
         pygame.mouse.get_rel()
@@ -432,6 +433,8 @@ while running:
                 score_text = Text("score", 30, "white", str(score), (10, 10))
                 missed = 5
                 missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (280, 10))
+                #### setting up time stuff for spawn interval
+                previous_time = 0
                 
         # BASKET MINIGAME #############################################
                 
@@ -451,33 +454,41 @@ while running:
                         minigames_basket.update_frame()
                         current_plant.update_frame()
                         
+                        #multiplying this quantity by delta means that the speed stays consistent between fps -- delta is the time between frames
+                        #this now means player_speed pixels per SECOND instead of pixels per FRAME
+                        player_speed = 200 * delta 
+                        starting_spawn_interval = 1 #starting interval at which fruit are spawned 
+                        gradient = 0.03 #speed at which spawn interval decreases
+                        spawn_interval = (starting_spawn_interval) / (1 + (gradient * score))  
+                        #this makes the spawn interval of the fruit decrease as the user's score increases
+                        
                         #checks for letter A or left arrow keyboard press, and moves left
                         if pygame.key.get_pressed()[pygame.K_a] or pygame.key.get_pressed()[pygame.K_LEFT]:
-                                current_plant.move((-3,0))
+                                current_plant.move((-player_speed,0))
                                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
                         #checks for letter D or right arrow keyboard press, and moves left
                         if pygame.key.get_pressed()[pygame.K_d] or pygame.key.get_pressed()[pygame.K_RIGHT]:
-                                current_plant.move((3, 0))
+                                current_plant.move((player_speed, 0))
                                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
                                 
-                        #spawns falling fruit in random position every two seconds, as a clone
+                        #spawns falling fruit in random position every spawn_interval seconds
                         falling_fruit = GameSprite(random.choice(["orange", "banana", "grape"]), (50, 50), (random.randrange(0, screen_width), 0))
                         falling_fruit.group = on_screen_clones
-                        seconds = round(pygame.time.get_ticks() / 1000)
-                        if seconds % 1 == 0:
-                                if seconds != last_second:
-                                        last_second = seconds
-                                        fruit = random.choice(["orange", "grape", "banana"]) #fruit is a random selection of these sprites
+                        current_time = pygame.time.get_ticks() 
+                        #the spawn interval is converted into milliseconds
+                        if current_time - previous_time  > (spawn_interval * 1000):
+                                previous_time = current_time
+                                fruit = random.choice(["orange", "grape", "banana"]) #fruit is a random selection of these sprites
+                                size = (40, 40)
+                                #different size allocations for different fruit, if not, size is size default above
+                                if fruit == "grape":
+                                        size = (20, 20)
+                                elif fruit == "orange":
                                         size = (40, 40)
-                                        #different size allocations for different fruit, if not, size is size default above
-                                        if fruit == "grape":
-                                                size = (20, 20)
-                                        elif fruit == "orange":
-                                                size = (40, 40)
-                                        falling_fruit = GameSprite(fruit, size, (random.randrange(0, screen_width-50), 0)) #creates falling_fruit sprite at random width across screen
-                                        falling_fruit.group = on_screen_clones #adding to clone group
-                                        falling_fruit.clone = True #defining as a clone
-                                        falling_fruit.update_frame() 
+                                falling_fruit = GameSprite(fruit, size, (random.randrange(0, screen_width-50), 0)) #creates falling_fruit sprite at random width across screen
+                                falling_fruit.group = on_screen_clones #adding to clone group
+                                falling_fruit.clone = True #defining as a clone
+                                falling_fruit.update_frame() 
                         
                         #iterates over every clone on screen, and checks if its colliding with the mask of the basket (meaning the actual coloured pixels, not transparent part)
                         for sprite in on_screen_clones:
@@ -549,7 +560,7 @@ while running:
         
         #FRAME UPDATE #####################################################
         
-        clock.tick(game_fps)
+        delta = clock.tick(game_fps) / 1000
                 
         #DEBUG STUFF ########################################################
         
