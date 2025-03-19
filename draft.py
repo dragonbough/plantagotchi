@@ -215,17 +215,26 @@ class UIElement(GameSprite):
                         global show_cursor
                         show_cursor = False
                         quitAnim.play() #.play() uses the self.playing functionality in AnimSprite so that the animation only plays once
+                        
                 elif self.name == "plants_button":
                         switch_screen_to("plants")
+                        
+                elif self.name == "settings_button":
+                        switch_screen_to("settings")
+                        
                 elif self.name == "back_button":
                         switch_screen_to("main")
+                        
                 elif self.name == "minigames_button":
                         switch_screen_to("minigames")
+                        
                 elif self.name == "minigames_play_button":
                         countdownAnim.play()
                         switch_screen_to("basket_game")
+                        
                 elif self.name == "water_button":
                         waterAnim.play()
+                        
                 elif self.name == "bonsai_select":
                         #implementing the bonsai selection 
                         current_plant = AnimSprite("bonsai", (200, 200), (70, 50))
@@ -275,6 +284,8 @@ minigames_basket_button.clickable = False
 plants_button = UIElement("plants_button", (60,60), (10, 130))
 plants_button.clickable = True
 
+settings_button = UIElement("settings_button", (50, 50), (240, 235))
+settings_button.clickable = True 
 
 quit_button = UIElement("quit_button", (60, 60), (10, 230))
 quit_button.clickable = True 
@@ -403,6 +414,7 @@ while running:
                 water_button.update_frame()
                 minigames_button.update_frame()
                 plants_button.update_frame()
+                settings_button.update_frame()
                 quit_button.update_frame()
 
         elif current_screen == "plants":
@@ -527,7 +539,12 @@ while running:
                 back_button.update_frame()
                         
         #####################################################################################
-
+        
+        #SETTINGS ###########################################################################
+        
+        elif current_screen == "settings":
+                #SETTINGS HERE
+                back_button.update_frame()
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
         
@@ -545,12 +562,12 @@ while running:
         if debug_mode == True:
                 i = 0
                 for sprite in on_screen_ui:
-                        pygame.draw.rect(screen, (i, i+100, i), sprite.rect)
+                        pygame.draw.rect(screen, (i, i+100, i), sprite.rect) #each ui element collider is shown in green
                         i+= 30
                 for sprite in on_screen_sprites:
-                         pygame.draw.rect(screen, (i+100, i, i), sprite.rect)
+                         pygame.draw.rect(screen, (i+100, i, i), sprite.rect) #each sprite element collider is shown in red
                 for sprite in on_screen_clones:
-                        pygame.draw.rect(screen, (i, i, i+100), sprite.rect)
+                        pygame.draw.rect(screen, (i, i, i+100), sprite.rect) #each ui element collider is shown in blue
         
         on_screen_clones.draw(screen)
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
