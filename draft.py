@@ -121,10 +121,10 @@ class Text(GameObject, pygame.sprite.Sprite):
                 
 # generic gamesprite class which allows for the display of an element anywhere on screen 
 class GameSprite(GameObject, pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png"):
+        def __init__(self, name, size=(50, 50), position=screen_center):
                 super().__init__(name, size, position) 
                 pygame.sprite.Sprite.__init__(self)
-                self.file_format = file_format
+                self.file_format = ".png"
                 self.directory = f"sprites/{self.name}/"
                 self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
                 self.rect = self.image.get_rect()
@@ -147,8 +147,8 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
 class AnimSprite(GameSprite, pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center, file_format=".png", fps=10):
-                super().__init__(name, size, position, file_format)
+        def __init__(self, name, size=(50, 50), position=screen_center, fps=10):
+                super().__init__(name, size, position)
                 self.frame = 1
                 self.max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.playing = False
@@ -246,11 +246,13 @@ minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.posi
 
 #ANIMATIONS ###############################################################
 
-waterAnim = AnimSprite("water_anim", (200, 200), (70, 40)) 
+waterAnim = AnimSprite("water_anim", (200, 200), (70, 40), 30) 
 waterAnim.group = on_screen_animations 
-quitAnim = AnimSprite("quit_anim", screen_size, (0, 0)) 
+
+quitAnim = AnimSprite("quit_anim", screen_size, (0, 0), 10) 
 quitAnim.group = on_screen_animations 
-countdownAnim = AnimSprite("countdown_anim", screen_size, (0, 0))
+
+countdownAnim = AnimSprite("countdown_anim", screen_size, (0, 0), 1)
 countdownAnim.group = on_screen_animations
 
 
@@ -542,15 +544,9 @@ while running:
                 
         pygame.display.flip() #update display (required to see changes made on the screen)
         
-        #FPS SETTINGS #####################################################
-        if current_screen == "basket_game":
-                clock.tick(30)
-        else:
-                clock.tick(game_fps)
-        if countdownAnim in on_screen_animations:
-                clock.tick(1)
-        if quitAnim in on_screen_animations:
-                clock.tick(15)
+        #FRAME UPDATE #####################################################
+        
+        clock.tick(game_fps)
                 
         #DEBUG STUFF ########################################################
         
