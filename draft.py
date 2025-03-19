@@ -510,8 +510,7 @@ while running:
                                         
                                         if sprite in on_screen_clones: #if sprites have not been killed, update their frames
                                                 sprite.update_frame()
-                                        
-                        on_screen_clones.draw(screen) #displays the clone
+                                         #displays the clone
                         
         elif current_screen == "score":
                 #layout for each element on screen
@@ -544,11 +543,16 @@ while running:
         #RENDERING GROUPS ###################################################
         
         if debug_mode == True:
-                i = 50
+                i = 0
                 for sprite in on_screen_ui:
-                        pygame.draw.rect(screen, (i, i, i), sprite.rect)
+                        pygame.draw.rect(screen, (i, i+100, i), sprite.rect)
                         i+= 30
+                for sprite in on_screen_sprites:
+                         pygame.draw.rect(screen, (i+100, i, i), sprite.rect)
+                for sprite in on_screen_clones:
+                        pygame.draw.rect(screen, (i, i, i+100), sprite.rect)
         
+        on_screen_clones.draw(screen)
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
         on_screen_ui.draw(screen)
         on_screen_animations.draw(screen)
