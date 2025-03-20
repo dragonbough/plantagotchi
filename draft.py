@@ -104,7 +104,8 @@ class Text(GameObject, pygame.sprite.Sprite):
                 self.font = pygame.font.Font(font_path)
         
         def update_frame(self):
-                if self.static == True:
+                #if the text is staying static, it wont need to update any frame -- as long as its in its RenderClass currently it'll just return
+                if self.static == True: 
                         if self in self.group:
                                 return
                 self.image = self.font.render(self.text, True, self.colour, self.background)
@@ -125,17 +126,16 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 pygame.sprite.Sprite.__init__(self)
                 self.file_format = ".png"
                 self.directory = f"sprites/{self.name}/"
-                self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
+                self.cached_image = pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha() #preloads image
+                self.image = pygame.transform.scale(self.cached_image, self.size) #sets the image to the preloaded image
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position                
                 self.group = on_screen_sprites
                 self.clone = False
                 self.mask = pygame.mask.from_surface(self.image)
                 
-                
-        def set_image(self): #this just sets the current image of the sprite to whatever the current self.NAME is
-                self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha(), self.size)
-                self.rect = self.image.get_rect()
+        def set_image(self): #this just sets the current image of the sprite to the right size 
+                self.image = pygame.transform.scale(self.cached_image, self.size)
                 self.rect.x, self.rect.y = self.position
                 
         def update_frame(self): #this just shows the image of the sprite, does not use the animation functionality seen in AnimSprite
@@ -153,9 +153,13 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 self.playing = False
                 self.fps = 1000 / fps
                 self.previous_time = 0
+                self.cached_images = {}
+                for i in range(self.max_frame):
+                        self.cached_images[i+1] = pygame.image.load(self.directory + str(i+1) + self.file_format).convert_alpha()
+                #creates a cache of all the frames in the animation, adding them to a dictionary of item corresponding to image
                 
-        def set_image(self): #this just sets the current image of the sprite to whatever the current self.FRAME (not self.name) is
-                self.image = pygame.transform.scale(pygame.image.load(self.directory + str(self.frame) + self.file_format).convert_alpha(), self.size) #uses frames instead of name
+        def set_image(self): #this just sets the current image of the sprite to whatever the current frame is in the dictionary
+                self.image = pygame.transform.scale(self.cached_images[self.frame], self.size)
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position
                 
@@ -471,7 +475,7 @@ while running:
                         player_speed = 200 * delta 
                         starting_spawn_interval = 1 #starting interval at which fruit are spawned 
                         gradient = 0.03 #speed at which spawn interval decreases
-                        spawn_interval = (starting_spawn_interval) / (1 + (gradient * score))  
+                        spawn_interval = (starting_spawn_interval) / (1 + (gradient * score))
                         #this makes the spawn interval of the fruit decrease as the user's score increases
                         
                         #checks for letter A or left arrow keyboard press, and moves left
