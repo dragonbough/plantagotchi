@@ -83,8 +83,9 @@ class GameObject():
                 
 class Text(GameObject, pygame.sprite.Sprite):
         def __init__(self, name, font_size=15, colour="white", text="NULL", position=(screen_center)):
+                default_font_path = "fonts/Tamagotchi/TamagotchiNormal.ttf"
                 self.text = text 
-                self.font = pygame.font.Font(None, font_size)
+                self.font = pygame.font.Font(default_font_path, font_size)
                 self.size = self.font.size(self.text)
                 self.colour = colour
                 self.background = screen_colour
@@ -95,13 +96,17 @@ class Text(GameObject, pygame.sprite.Sprite):
                 
         def set_text(self, new_text):
                 self.text = new_text
+                self.size = self.font.size(self.text)
+                self.rect = pygame.Rect(self.position, self.size)
         
         def set_font(self, font, size):
+                if font == "pygame_default":
+                        self.font = pygame.font.Font(None, size)
                 try:
                         font_path = pygame.font.match_font(font)
                 except:
                         print("Invalid font")
-                self.font = pygame.font.Font(font_path)
+                self.font = pygame.font.Font(font_path, size)
         
         def update_frame(self):
                 #if the text is staying static, it wont need to update any frame -- as long as its in its RenderClass currently it'll just return
@@ -237,13 +242,15 @@ class UIElement(GameSprite):
                         switch_screen_to("basket_game")
                         
                 elif self.name == "water_button":
-                        waterAnim.play()
+                        if waterAnim.playing == False:
+                                waterAnim.play()
                         
                 elif self.name == "bonsai_select":
                         #implementing the bonsai selection 
                         current_plant = AnimSprite("bonsai", (200, 200), (70, 50))
                         switch_screen_to("prev")
-                        #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it or i can set the screen back to main
+                        #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
+                        #or i can set the screen back to main
            
            
            
@@ -300,20 +307,22 @@ back_button.clickable = True
 
 #TEXT ######################################################################
 
-plant_name = Text("plant_name", 40, "white", current_plant.name, (current_plant.position_x + 72.5, current_plant.position_y - 30))
+plant_name = Text("plant_name", 20, "white", current_plant.name, (current_plant.position_x - 20, current_plant.position_y + 20))
 plant_name.static = True
 plant_name.set_bg_colour("transparent")
 
-score_screen_text = Text("score_screen_text", 40, "white", "achieved a score of:", screen_center)
+score_screen_text = Text("score_screen_text", 10, "white", "achieved a score of:", screen_center)
 score_screen_text.static = True
-score_screen_text.set_position((screen_center[0], screen_center[1]-10), True)
+score_screen_text.set_position(screen_center, True)
 
 debug_text = Text("debug", 20, "green", "DEBUG MODE TRUE", (165, 10))
 debug_text.static = True
 debug_text.set_bg_colour("black")
+debug_text.set_font("pygame_default", 20)
 
 fps_counter = Text("fps_counter", 20, "green", "FPS: 0", (237.5, 22.5))
 fps_counter.set_bg_colour("black")
+fps_counter.set_font("pygame_default", 20)
 
 #OTHER #####################################################################
 
@@ -339,7 +348,7 @@ switch_screen_to("main")
 
 while running:
         
-        #CURSOR #####################################################
+        # CURSOR #####################################################
         
         hovering = []
         
@@ -377,7 +386,7 @@ while running:
         else:
                 cursors.empty()
         
-        #EVENTS ###################################################
+        # EVENTS ###################################################
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                         running = False
@@ -402,6 +411,8 @@ while running:
         
         screen.fill(screen_colour) 
         
+        # MAIN #######################################################
+        
         if current_screen == "main":
                 
                 current_plant.resize(200, 200)
@@ -412,7 +423,7 @@ while running:
                         show_cursor = False
                         plant_name.kill()
                 else:
-                        plant_name.set_position((current_plant.position_x + 72.5, current_plant.position_y - 30))
+                        plant_name.set_position((current_plant.position_x + 115, current_plant.position_y-10), True)
                         plant_name.update_frame()
                 
                 water_button.update_frame()
@@ -426,6 +437,8 @@ while running:
                 back_button.set_position((10, 230))
                 back_button.update_frame()
                 #maybe you want to add the bonsai_button.update_frame() here? 
+        
+        # MINIGAME SELECT SCREEN #############################################
                 
         elif current_screen == "minigames":
                 current_plant.resize(200, 200)
@@ -446,9 +459,11 @@ while running:
                 minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
                 #####
                 score = 0
-                score_text = Text("score", 30, "white", str(score), (10, 10))
+                score_text = Text("score", 30, "white", str(score), (20, 10))
+                score_text.set_bg_colour("transparent")
                 missed = 5
-                missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (280, 10))
+                missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (265, 10))
+                missed_text.set_bg_colour("transparent")
                 #### setting up time stuff for spawn interval
                 previous_time = 0
                 
@@ -527,7 +542,9 @@ while running:
                                         if sprite in on_screen_clones: #if sprites have not been killed, update their frames
                                                 sprite.update_frame()
                                          #displays the clone
-                        
+                                         
+        # SCORE SCREEN ###############################################################
+        
         elif current_screen == "score":
                 #layout for each element on screen
                 current_plant.resize(40, 40)
@@ -548,6 +565,7 @@ while running:
         
         elif current_screen == "settings":
                 #SETTINGS HERE
+                back_button.set_position((10, 230))
                 back_button.update_frame()
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
@@ -572,6 +590,11 @@ while running:
                          pygame.draw.rect(screen, (i+100, i, i), sprite.rect) #each sprite element collider is shown in red
                 for sprite in on_screen_clones:
                         pygame.draw.rect(screen, (i, i, i+100), sprite.rect) #each ui element collider is shown in blue
+                for sprite in on_screen_animations:
+                        pygame.draw.rect(screen, (i+100, i+100, i), sprite.rect)
+                for sprite in on_screen_text:
+                        if sprite.name != "debug_text" and sprite.name != "fps_counter":
+                                pygame.draw.rect(screen, (i, i+100, i+100), sprite.rect)
         
         on_screen_clones.draw(screen)
         on_screen_sprites.draw(screen) #draws all objects in the on_screen_sprites group
