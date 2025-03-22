@@ -4,15 +4,21 @@ import pickle
 import sys
 import random
 
+screen_size = screen_width, screen_height = 300, 300
+
+#SCREEN POSITION STUFF? I DON'T KNOW IF I LIKE THIS
+
+# window_x = 1920 - screen_width - 50
+# window_y = 1080 - screen_height - 50 #factoring in taskbar height
+
+# os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (window_x, window_y)
+
 pygame.init()
 
-def return_frames_count(directory):
-        return len(os.listdir(directory)) 
-#returns number of frames/images in the sprite directory i assume
 
-
-screen_size = screen_width, screen_height = 300, 300
-screen = pygame.display.set_mode(screen_size)
+screen = pygame.display.set_mode(screen_size) #pygame.NOFRAME?
+pygame.display.set_caption("plantagotchi") #setting window text
+pygame.display.set_icon(pygame.image.load("sprites/plantagotchi_icon.png")) #setting icon for the game
 screen_center = screen_width / 2, screen_height /2 
 screen_colour = "black" 
 clock = pygame.time.Clock()
@@ -21,6 +27,10 @@ delta = 1
 
 current_screen = None
 visited_screens = [] 
+
+#returns number of frames/images in the sprite directory
+def return_frames_count(directory):
+        return len(os.listdir(directory)) 
 
 #Sets screen and clock settings as well as an array of previous screens for backtracking
 
@@ -315,7 +325,7 @@ score_screen_text = Text("score_screen_text", 10, "white", "achieved a score of:
 score_screen_text.static = True
 score_screen_text.set_position(screen_center, True)
 
-debug_text = Text("debug", 20, "green", "DEBUG MODE TRUE", (165, 10))
+debug_text = Text("debug_text", 20, "green", "DEBUG MODE TRUE", (165, 10))
 debug_text.static = True
 debug_text.set_bg_colour("black")
 debug_text.set_font("pygame_default", 20)
@@ -347,7 +357,7 @@ switch_screen_to("main")
 # MAIN GAME LOOP ###########################################################
 
 while running:
-        
+                
         # CURSOR #####################################################
         
         hovering = []
