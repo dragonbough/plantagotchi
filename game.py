@@ -390,8 +390,7 @@ while running:
                 if mouse_reset_time < 0:
                         show_cursor = False
         else:
-                mouse_reset_time = 3 #time before cursor disappears when idle, in seconds
-                mouse_reset_time *= 1000 #time is converted into miliseconds
+                mouse_reset_time = 3000 #time before cursor disappears when idle, in milliseconds
                 show_cursor = True 
                       
         pygame.mouse.get_rel()
@@ -481,7 +480,7 @@ while running:
                 minigames_basket_button.set_position((64, 10))
                 minigames_play_button.update_frame()
                 minigames_basket_button.update_frame()
-                back_button.set_position((10, 230))
+                back_button.set_position((10, 230))q
                 back_button.update_frame()
                 start = False
                 
