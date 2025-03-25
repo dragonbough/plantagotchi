@@ -11,12 +11,18 @@ def load:
         with open('save.pkl', 'rb') as f:
                 try:
                         SaveDict = pickle.load(f)
-                        BonsaiDict = SaveDict(["Bonsai"])
-                        DaisyDict = SaveDict(["Daisy"])
+                        BonsaiDict = SaveDict["Bonsai"]
+                        DaisyDict = SaveDict["Daisy"]
                         return BonsaiDict, DaisyDict
                 except:
                         return 0
-
+                        
+def set_attribute(Dict, Att):
+        try:
+                return Dict[Att]
+        except:
+                return 0
+        
 
 
         
@@ -214,25 +220,27 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 self.playing = True
         
                 
-#class plant(AnimSprite):
-        #def __init__(self, cruelty, bonding, *args): ##surely this is needed so that we don't overwrite attributes with value of cruelty and bonding
-                #self.__cruelty = cruelty
-                #self.__bonding = bonding 
-                #super.__init__(*args)
-        #def access_cruelty(self):
-                #return self.__cruelty
+class plant(AnimSprite):
+        def __init__(self, cruelty, bonding, *args): ##surely this is needed so that we don't overwrite attributes with value of cruelty and bonding
+                self.__cruelty = cruelty
+                self.__bonding = bonding 
+                super.__init__(*args)
+        def access_cruelty(self):
+                return self.__cruelty
 
-        #def access_bonding(self):
-                #return self.__bonding
+        def access_bonding(self):
+                return self.__bonding
 
-        #def update_cruelty(self, value):
-                #self.__cruelty = self.__cruelty + value
+        def update_cruelty(self, value):
+                self.__cruelty = self.__cruelty + value
 
-        #def update_bonding(self, value):
-                #self.__bonding = self.__bonding + value
+        def update_bonding(self, value):
+                self.__bonding = self.__bonding + value
 
-        #def set_image(self):
-                
+        def set_image(self):
+
+#when creating an instance of this class please specify the cruelty and bonding using cruelty=value so that you don't overwrite inherited attributes or use the function further up for
+#assigning attributes using data from the save file
                 
 class UIElement(GameSprite): 
         def __init__(self, *args):
