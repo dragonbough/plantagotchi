@@ -6,6 +6,20 @@ import random
 
 screen_size = screen_width, screen_height = 300, 300
 
+
+def load:
+        with open('save.pkl', 'rb') as f:
+                try:
+                        SaveDict = pickle.load(f)
+                        BonsaiDict = SaveDict(["Bonsai"])
+                        DaisyDict = SaveDict(["Daisy"])
+                        return BonsaiDict, DaisyDict
+                except:
+                        return 0
+
+
+
+        
 #SCREEN POSITION STUFF? I DON'T KNOW IF I LIKE THIS
 
 # window_x = 1920 - screen_width - 50
