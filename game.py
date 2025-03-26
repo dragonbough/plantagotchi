@@ -237,8 +237,6 @@ class plant(AnimSprite):
         def update_bonding(self, value):
                 self.__bonding = self.__bonding + value
 
-        def set_image(self):
-
 #when creating an instance of this class please specify the cruelty and bonding using cruelty=value so that you don't overwrite inherited attributes or use the function further up for
 #assigning attributes using data from the save file
                 
@@ -446,15 +444,18 @@ while running:
         
         if current_screen == "main":
                 
-                current_plant.resize(200, 200)
-                current_plant.set_position((70, 50))
+                current_plant.resize(235, 235)
+                current_plant.set_position((30, 60))
                 current_plant.update_frame() #updates the current_plant plant object's animation and adds it to on_screen_sprites RenderQueue Group
+                
+                waterAnim.resize(current_plant.width, current_plant.height)
+                waterAnim.set_position((current_plant.position_x+22.5, current_plant.position_y+21))
                 
                 if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
                         show_cursor = False
                         plant_name.kill()
                 else:
-                        plant_name.set_position((current_plant.position_x + 115, current_plant.position_y-10), True)
+                        plant_name.set_position((current_plant.position_x + 132.5, current_plant.position_y-10), True)
                         plant_name.update_frame()
                 
                 water_button.update_frame()
@@ -480,7 +481,7 @@ while running:
                 minigames_basket_button.set_position((64, 10))
                 minigames_play_button.update_frame()
                 minigames_basket_button.update_frame()
-                back_button.set_position((10, 230))q
+                back_button.set_position((10, 230))
                 back_button.update_frame()
                 start = False
                 
@@ -518,7 +519,8 @@ while running:
                         
                         #multiplying this quantity by delta means that the speed stays consistent between fps -- delta is the time between frames
                         #this now means player_speed pixels per SECOND instead of pixels per FRAME
-                        player_speed = 200 * delta 
+                        speed_multiplier = 1 + (0.005 * score) 
+                        player_speed = 200 * speed_multiplier * delta 
                         starting_spawn_interval = 1 #starting interval at which fruit are spawned 
                         gradient = 0.03 #speed at which spawn interval decreases
                         spawn_interval = (starting_spawn_interval) / (1 + (gradient * score))
