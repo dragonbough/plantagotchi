@@ -67,8 +67,13 @@ def switch_screen_to(screen):
                 item.kill()
         for item in on_screen_text:
                 item.kill()
-        current_screen = screen 
-        visited_screens.append(screen) 
+        #if switching to the previous screen, it will remove the screen you're on from the visited_screens list and then switch to the last one
+        if screen == "prev":
+                visited_screens.pop()
+                current_screen = visited_screens[len(visited_screens)-1]
+        else:
+                current_screen = screen 
+                visited_screens.append(screen) 
 #Removes all game objects from previous screen before changing current_screen
 
 #Queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
@@ -156,7 +161,7 @@ class Text(GameObject, pygame.sprite.Sprite):
                 
 # generic gamesprite class which allows for the display of an element anywhere on screen 
 class GameSprite(GameObject, pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center):
+        def __init__(self, name, size=(50, 50), position=screen_center, clone=False):
                 super().__init__(name, size, position) 
                 pygame.sprite.Sprite.__init__(self)
                 self.file_format = ".png"
@@ -166,7 +171,10 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position                
                 self.group = on_screen_sprites
-                self.clone = False
+                self.clone = clone
+                self.cloneid = None
+                if self.clone == True:
+                        self.cloneid = 0
                 self.mask = pygame.mask.from_surface(self.image)
                 
         def set_image(self): #this just sets the current image of the sprite to the right size 
@@ -177,6 +185,8 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 self.set_image()
                 if self.clone == False:
                         self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
+                else:
+                        self.cloneid = len([sprite for sprite in self.group if sprite.name == self.name])
                 self.group.add(self)
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
@@ -221,10 +231,10 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
         
                 
 class plant(AnimSprite):
-        def __init__(self, cruelty, bonding, *args): ##surely this is needed so that we don't overwrite attributes with value of cruelty and bonding
+        def __init__(self, cruelty, bonding, *args): ##honestly just for readability and so its easier to understand, replace args with each parameter from animsprite
                 self.__cruelty = cruelty
                 self.__bonding = bonding 
-                super.__init__(*args)
+                super.__init__(*args) #and pass in, explicitly, the parameters explicitly into super()
         def access_cruelty(self):
                 return self.__cruelty
 
@@ -241,8 +251,8 @@ class plant(AnimSprite):
 #assigning attributes using data from the save file
                 
 class UIElement(GameSprite): 
-        def __init__(self, *args):
-                super().__init__(*args)
+        def __init__(self, name, size=(50, 50), position=screen_center):
+                super().__init__(name, size, position)
                 self.group = on_screen_ui
                 self.clickable = False
                 
@@ -262,14 +272,20 @@ class UIElement(GameSprite):
                         switch_screen_to("settings")
                         
                 elif self.name == "back_button":
+                        switch_screen_to("prev")
+                
+                elif self.name == "home_button":
                         switch_screen_to("main")
                         
                 elif self.name == "minigames_button":
                         switch_screen_to("minigames")
                         
                 elif self.name == "minigames_play_button":
-                        countdownAnim.play()
-                        switch_screen_to("basket_game")
+                        if self.cloneid == None:
+                                countdownAnim.play()
+                                switch_screen_to("basket_game")
+                        elif self.cloneid == 1:
+                                switch_screen_to("baseball_game")
                         
                 elif self.name == "water_button":
                         if waterAnim.playing == False:
@@ -319,8 +335,15 @@ minigames_button.clickable = True
 minigames_play_button = UIElement("minigames_play_button", (60, 60))
 minigames_play_button.clickable = True
 
+minigames_play_button2 = UIElement("minigames_play_button", (60, 60))
+minigames_play_button2.clickable = True
+minigames_play_button2.clone = True
+
 minigames_basket_button = UIElement("minigames_basket_button", (60, 60))
 minigames_basket_button.clickable = False
+
+minigames_baseball_button = UIElement("minigames_baseball_button", (60, 60) )
+minigames_baseball_button.clickable = False
 
 plants_button = UIElement("plants_button", (60,60), (10, 130))
 plants_button.clickable = True
@@ -333,6 +356,9 @@ quit_button.clickable = True
 
 back_button = UIElement("back_button", (60, 60), (10, 230))
 back_button.clickable = True
+
+home_button = UIElement("home_button", (60, 60), (10, 230))
+home_button.clickable = True
 
 
 #TEXT ######################################################################
@@ -477,10 +503,18 @@ while running:
                 current_plant.set_position((100, 50))
                 current_plant.update_frame() 
                 
+                #BASKET MINIGAME BUTTON
                 minigames_play_button.set_position((10, 10))
                 minigames_basket_button.set_position((64, 10))
                 minigames_play_button.update_frame()
                 minigames_basket_button.update_frame()
+                
+                #BASEBALL MINIGAME BUTTON
+                minigames_play_button2.set_position((10, 70))
+                minigames_baseball_button.set_position((64, 70))
+                minigames_play_button2.update_frame()
+                minigames_baseball_button.update_frame()
+                
                 back_button.set_position((10, 230))
                 back_button.update_frame()
                 start = False
@@ -576,6 +610,13 @@ while running:
                                                 sprite.update_frame()
                                          #displays the clone
                                          
+        # BASEBALL GAME #############################################################
+        
+        elif current_screen == "baseball_game":
+                
+                back_button.set_position((10, 230))
+                back_button.update_frame()
+
         # SCORE SCREEN ###############################################################
         
         elif current_screen == "score":
@@ -589,8 +630,8 @@ while running:
                 score_text.resize(80, 80)
                 score_text.set_position((screen_center[0], screen_center[1] + 40), True)
                 score_text.update_frame()
-                back_button.set_position((screen_center[0], screen_center[1] + 95), True)
-                back_button.update_frame()
+                home_button.set_position((screen_center[0], screen_center[1] + 95), True)
+                home_button.update_frame()
                         
         #####################################################################################
         
