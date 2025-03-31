@@ -24,6 +24,9 @@ def set_attribute(Dict, Att):
                 return 0
         
 
+Bonsai_Dict, Daisy_Dict = load()
+
+
 
         
 #SCREEN POSITION STUFF? I DON'T KNOW IF I LIKE THIS
