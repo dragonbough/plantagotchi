@@ -191,8 +191,10 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
 class AnimSprite(GameSprite, pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center, fps=10):
+        def __init__(self, name, size=(50, 50), position=screen_center, fps=10, cruelty=0, bonding=0):
                 super().__init__(name, size, position)
+                self.cruelty = cruelty
+                self.bonding = bonding
                 self.frame = 1
                 self.max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.playing = False
@@ -202,6 +204,17 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 for i in range(self.max_frame):
                         self.cached_images[i+1] = pygame.image.load(self.directory + str(i+1) + self.file_format).convert_alpha()
                 #creates a cache of all the frames in the animation, adding them to a dictionary of item corresponding to image
+        def access_cruelty(self):
+                return self.__cruelty
+
+        def access_bonding(self):
+                return self.__bonding
+
+        def update_cruelty(self, value):
+                self.__cruelty = self.__cruelty + value
+
+        def update_bonding(self, value):
+                self.__bonding = self.__bonding + value
                 
         def set_image(self): #this just sets the current image of the sprite to whatever the current frame is in the dictionary
                 self.image = pygame.transform.scale(self.cached_images[self.frame], self.size)
@@ -230,22 +243,22 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 self.playing = True
         
                 
-class plant(AnimSprite):
-        def __init__(self, cruelty, bonding, *args): ##honestly just for readability and so its easier to understand, replace args with each parameter from animsprite
-                self.__cruelty = cruelty
-                self.__bonding = bonding 
-                super.__init__(*args) #and pass in, explicitly, the parameters explicitly into super()
-        def access_cruelty(self):
-                return self.__cruelty
+#class plant(AnimSprite):
+        #def __init__(self, cruelty, bonding, *args): ##honestly just for readability and so its easier to understand, replace args with each parameter from animsprite
+                #self.__cruelty = cruelty
+                #self.__bonding = bonding 
+                #super.__init__(*args) #and pass in, explicitly, the parameters explicitly into super()
+        #def access_cruelty(self):
+                #return self.__cruelty
 
-        def access_bonding(self):
-                return self.__bonding
+        #def access_bonding(self):
+               # return self.__bonding
 
-        def update_cruelty(self, value):
-                self.__cruelty = self.__cruelty + value
+        #def update_cruelty(self, value):
+               # self.__cruelty = self.__cruelty + value
 
-        def update_bonding(self, value):
-                self.__bonding = self.__bonding + value
+       # def update_bonding(self, value):
+               # self.__bonding = self.__bonding + value
 
 #when creating an instance of this class please specify the cruelty and bonding using cruelty=value so that you don't overwrite inherited attributes or use the function further up for
 #assigning attributes using data from the save file
@@ -304,7 +317,7 @@ class UIElement(GameSprite):
      
 #SPRITES #################################################################
 
-current_plant = AnimSprite("daisy", (200, 200), (70, 50)) #defining the current_plant plant as a Plant object named "daisy"
+current_plant = AnimSprite("daisy", (200, 200), (70, 50) cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
