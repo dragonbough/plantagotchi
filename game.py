@@ -23,7 +23,22 @@ def set_attribute(Dict, Att):
         except:
                 return 0
         
-
+def save(Plant, cruelty, bonding):
+                try:
+                        SaveDict = 0
+                        with open('save.pkl' 'rb') as f:
+                                SaveDict = pickle.load(f)
+                        with open('save.pkl', 'wb') as f:
+                                SaveDict[Plant]["Cruelty"] = cruelty
+                                SaveDict[Plant]["Bonding"] = bonding
+                                pickle.dump(SaveDict, f)
+                except:
+                        print("Eror in save")
+                        return 0
+                        
+                                
+                                
+                
 Bonsai_Dict, Daisy_Dict = load()
 
 
@@ -309,7 +324,7 @@ class UIElement(GameSprite):
                         
                 elif self.name == "bonsai_select":
                         #implementing the bonsai selection 
-                        current_plant = AnimSprite("bonsai", (200, 200), (70, 50))
+                        current_plant = AnimSprite("Bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
                         #or i can set the screen back to main
@@ -320,7 +335,7 @@ class UIElement(GameSprite):
      
 #SPRITES #################################################################
 
-current_plant = AnimSprite("daisy", (200, 200), (70, 50) cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
+current_plant = AnimSprite("Daisy", (200, 200), (70, 50) cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
