@@ -12,8 +12,8 @@ def load():
         with open('save.pkl', 'rb') as f:
                 try:
                         SaveDict = pickle.load(f)
-                        BonsaiDict = SaveDict["Bonsai"]
-                        DaisyDict = SaveDict["Daisy"]
+                        BonsaiDict = SaveDict["bonsai"]
+                        DaisyDict = SaveDict["daisy"]
                         return BonsaiDict, DaisyDict
                 except:
                         return 0, 0
@@ -34,7 +34,7 @@ def save(Plant, cruelty, bonding):
                                 SaveDict[Plant]["Bonding"] = bonding
                                 pickle.dump(SaveDict, f)
                 except:
-                        print("Eror in save")
+                        print("Error in save")
                         return 0
                         
                                 
@@ -340,7 +340,7 @@ class UIElement(GameSprite):
                         
                 elif self.name == "bonsai_select":
                         #implementing the bonsai selection 
-                        current_plant = AnimSprite("Bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
+                        current_plant = AnimSprite("bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
                         #or i can set the screen back to main
@@ -351,7 +351,7 @@ class UIElement(GameSprite):
      
 #SPRITES #################################################################
 
-current_plant = AnimSprite("Daisy", (200, 200), (70, 50) cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
+current_plant = AnimSprite("daisy", (200, 200), (70, 50) cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
