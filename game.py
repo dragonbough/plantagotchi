@@ -544,6 +544,7 @@ while running:
                 # PLANT SELECTION FUNCTIONALITY HERE
                 back_button.set_position((10, 230))
                 back_button.update_frame()
+                bonsai_button.update_frame()
                 #maybe you want to add the bonsai_button.update_frame() here? 
         
         # MINIGAME SELECT SCREEN #############################################
