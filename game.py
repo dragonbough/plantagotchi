@@ -41,7 +41,8 @@ def save(Plant, cruelty, bonding):
                                 
                                 
                 
-Bonsai_Dict, Daisy_Dict = load()
+Bonsai_Dict = load()
+Daisy_Dict = load()
 
 
 
@@ -208,8 +209,11 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 self.angle += angle
                 if self.angle >= 360:
                         self.angle -= 360
+                        
         def set_flip(self, flip_x=False, flip_y=False):
-                self.flip_x, self.flip_y = flip_x, flip_y        
+                self.flip_x, self.flip_y = flip_x, flip_y  
+                self.set_image()
+                self.mask = pygame.mask.from_surface(self.image)      
                 
         def set_image(self): #this just sets the current image of the sprite to the right size 
                 self.image = pygame.transform.flip(pygame.transform.rotate(pygame.transform.scale(self.cached_image, self.size), self.angle), self.flip_x, self.flip_y)
@@ -352,7 +356,7 @@ class UIElement(GameSprite):
      
 #SPRITES #################################################################
 
-current_plant = AnimSprite("daisy", (200, 200), (70, 50) cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
+current_plant = AnimSprite("Daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
@@ -514,6 +518,10 @@ while running:
                                 if debug_mode == False:
                                         debug_text.kill()
                                         fps_counter.kill()
+                
+                if current_screen == "baseball_game":
+                        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                                minigames_bat.set_flip(not minigames_bat.flip_x, False)
         
         screen.fill(screen_colour) 
         
@@ -571,11 +579,6 @@ while running:
                 back_button.update_frame()
                 
                 previous_time = 0 #needed by all the minigames for some calculations (spawn interval)
-                previous_mouse_pos = previous_mouse_x, previous_mouse_y = (0, 0) #also needed by some minigame calculations
-                previous_time_distance = 0 
-                time_stationary = 0
-                ball_velocity = ball_velocity_x, ball_velocity_y = (-1, 0)
-                velocity_dict = {}
                 
         # BASKET MINIGAME #############################################
                 
@@ -677,6 +680,11 @@ while running:
                         current_plant.resize((200, 200))
                         current_plant.set_position((-50, 100))
                         minigames_bat.group = cursors
+                        previous_mouse_pos = previous_mouse_x, previous_mouse_y = (0, 0) #also needed by some minigame calculations
+                        previous_time_distance = 0 
+                        time_stationary = 0
+                        ball_velocity = ball_velocity_x, ball_velocity_y = (-1, 0)
+                        velocity_dict = {}
                 else:
                         start = True 
                         back_button.update_frame()
@@ -697,6 +705,11 @@ while running:
                         else:
                                 minigames_bat.kill()
                                 
+                        mouse_x_threshold = 200        
+                        
+                        if mouse_x > mouse_x_threshold:
+                                pygame.mouse.set_pos((mouse_x_threshold, mouse_y))
+                                
                         current_time = pygame.time.get_ticks()
                         
                         if previous_mouse_pos != mouse_pos:
@@ -713,26 +726,28 @@ while running:
                         previous_mouse_pos = previous_mouse_x, previous_mouse_y = mouse_pos                                                
                         previous_time_distance = current_time
                                 
-                        spawn_interval = 1
+                        spawn_interval = 3 #seconds
                         
                         if current_time - previous_time  > (spawn_interval * 1000):
                                         previous_time = current_time
                                         baseball = GameSprite("baseball", (50, 50), screen_center, True)
-                                        ball_velocity = (-1, 0)
+                                        ball_velocity = (-5, random.randrange(1, 3))
                                         baseball.group = on_screen_clones
                                         velocity_dict[len(velocity_dict)] = ball_velocity
-                                        print(velocity_dict)
-                                        baseball.set_position((300, 150))
+                                        baseball.set_position((300, random.randrange(30, 160)))
                                         baseball.update_frame()
                                         
                         for clone in on_screen_clones:
                                 colliding = pygame.sprite.spritecollideany(minigames_bat, on_screen_clones, pygame.sprite.collide_mask)
-                                if colliding == clone and math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2) > 200 and mouse_x_velocity == abs(mouse_x_velocity):
+                                if colliding == clone and mouse_x_velocity == abs(mouse_x_velocity):
                                         if velocity_dict[clone.cloneid] == ball_velocity:
-                                                restitution = 0.01
-                                                hit_velocity_x = ball_velocity_x * mouse_x_velocity * restitution
-                                                print(f"hit velocity x: {hit_velocity_x}")
-                                                velocity_dict[clone.cloneid] = (-hit_velocity_x, mouse_y_velocity * restitution)
+                                                velocity_magnitude = math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2)
+                                                print(velocity_magnitude)
+                                                if velocity_magnitude > 200:
+                                                        restitution = 0.01
+                                                        hit_velocity_x = ball_velocity_x * mouse_x_velocity * restitution
+                                                        print(f"hit velocity x: {hit_velocity_x}")
+                                                        velocity_dict[clone.cloneid] = (-hit_velocity_x, mouse_y_velocity * restitution)
                                 
                                 clone.move(velocity_dict[clone.cloneid], False)
                         
