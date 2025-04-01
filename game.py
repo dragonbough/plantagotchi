@@ -3,6 +3,7 @@ import os
 import pickle
 import sys
 import random
+import math
 
 screen_size = screen_width, screen_height = 300, 300
 
@@ -123,16 +124,17 @@ class GameObject():
                         self.rect.center = position
                         self.position = self.position_x, self.position_y = self.rect.x, self.rect.y
         
-        def move(self, index):
+        def move(self, index, collision=True):
                 #im cheating here, im moving the image rectangle by the index, clamping it to the size of the screen, and then setting the position to its new position
                 self.rect.move_ip(index) 
-                self.rect.clamp_ip(screen.get_rect())
+                if collision == True:
+                        self.rect.clamp_ip(screen.get_rect())
                 self.position_x = self.rect.x
                 self.position_y = self.rect.y 
                 self.position = self.position_x, self.position_y
         
-        def resize(self, new_width, new_height):
-                self.size = new_width, new_height
+        def resize(self, size=(50, 50)):
+                self.size = size[0], size[1]
                 
 class Text(GameObject, pygame.sprite.Sprite):
         def __init__(self, name, font_size=15, colour="white", text="NULL", position=(screen_center)):
@@ -179,13 +181,14 @@ class Text(GameObject, pygame.sprite.Sprite):
                 
 # generic gamesprite class which allows for the display of an element anywhere on screen 
 class GameSprite(GameObject, pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center, clone=False):
+        def __init__(self, name, size=(50, 50), position=screen_center, clone=False, angle=0):
                 super().__init__(name, size, position) 
                 pygame.sprite.Sprite.__init__(self)
                 self.file_format = ".png"
                 self.directory = f"sprites/{self.name}/"
                 self.cached_image = pygame.image.load(self.directory + str(self.name) + self.file_format).convert_alpha() #preloads image
-                self.image = pygame.transform.scale(self.cached_image, self.size) #sets the image to the preloaded image
+                self.angle = angle
+                self.image = pygame.transform.rotate(pygame.transform.scale(self.cached_image, self.size), self.angle)#sets the image to the preloaded image
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position                
                 self.group = on_screen_sprites
@@ -194,9 +197,21 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 if self.clone == True:
                         self.cloneid = 0
                 self.mask = pygame.mask.from_surface(self.image)
+                self.flip_x = False
+                self.flip_y = False
+                
+        def set_rotation(self, angle=0):
+                self.angle = angle       
+                
+        def rotate_by(self, angle=0):
+                self.angle += angle
+                if self.angle >= 360:
+                        self.angle -= 360
+        def set_flip(self, flip_x=False, flip_y=False):
+                self.flip_x, self.flip_y = flip_x, flip_y        
                 
         def set_image(self): #this just sets the current image of the sprite to the right size 
-                self.image = pygame.transform.scale(self.cached_image, self.size)
+                self.image = pygame.transform.flip(pygame.transform.rotate(pygame.transform.scale(self.cached_image, self.size), self.angle), self.flip_x, self.flip_y)
                 self.rect.x, self.rect.y = self.position
                 
         def update_frame(self): #this just shows the image of the sprite, does not use the animation functionality seen in AnimSprite
@@ -316,6 +331,7 @@ class UIElement(GameSprite):
                                 countdownAnim.play()
                                 switch_screen_to("basket_game")
                         elif self.cloneid == 1:
+                                countdownAnim.play()
                                 switch_screen_to("baseball_game")
                         
                 elif self.name == "water_button":
@@ -338,6 +354,8 @@ class UIElement(GameSprite):
 current_plant = AnimSprite("Daisy", (200, 200), (70, 50) cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
+
+minigames_bat = GameSprite("baseball_bat", (140, 140), current_plant.position)
 
 
 #ANIMATIONS ###############################################################
@@ -431,6 +449,7 @@ show_cursor = True #show custom cursor
 
 switch_screen_to("main")
 
+
 # MAIN GAME LOOP ###########################################################
 
 while running:
@@ -501,11 +520,11 @@ while running:
         
         if current_screen == "main":
                 
-                current_plant.resize(235, 235)
+                current_plant.resize((235, 235))
                 current_plant.set_position((30, 60))
                 current_plant.update_frame() #updates the current_plant plant object's animation and adds it to on_screen_sprites RenderQueue Group
                 
-                waterAnim.resize(current_plant.width, current_plant.height)
+                waterAnim.resize((current_plant.width, current_plant.height))
                 waterAnim.set_position((current_plant.position_x+22.5, current_plant.position_y+21))
                 
                 if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
@@ -530,7 +549,7 @@ while running:
         # MINIGAME SELECT SCREEN #############################################
                 
         elif current_screen == "minigames":
-                current_plant.resize(200, 200)
+                current_plant.resize((200, 200))
                 current_plant.set_position((100, 50))
                 current_plant.update_frame() 
                 
@@ -548,31 +567,38 @@ while running:
                 
                 back_button.set_position((10, 230))
                 back_button.update_frame()
-                start = False
                 
-                #setting the position of the plant in advance of entering the game
-                current_plant.resize(95, 95)
-                current_plant.set_position((50, 200))
-                minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
-                #####
-                score = 0
-                score_text = Text("score", 30, "white", str(score), (20, 10))
-                score_text.set_bg_colour("transparent")
-                missed = 5
-                missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (265, 10))
-                missed_text.set_bg_colour("transparent")
-                #### setting up time stuff for spawn interval
-                previous_time = 0
+                previous_time = 0 #needed by all the minigames for some calculations (spawn interval)
+                previous_mouse_pos = previous_mouse_x, previous_mouse_y = (0, 0) #also needed by some minigame calculations
+                previous_time_distance = 0 
+                time_stationary = 0
+                ball_velocity = ball_velocity_x, ball_velocity_y = (-1, 0)
+                velocity_dict = {}
                 
         # BASKET MINIGAME #############################################
                 
         elif current_screen == "basket_game":
-                if countdownAnim not in on_screen_animations: #if countdown stops playing, we can start, and show the back button
-                        start = True
-                        back_button.update_frame()
-                else:
+                if countdownAnim in on_screen_animations: #while countdown is playing, we can prepare for the game to start
+                        start = False
+                        current_plant.resize((95, 95))
+                        current_plant.set_position((50, 200))
+                        minigames_basket.set_position((current_plant.position_x, current_plant.position_y - 60))
+                        score = 0
+                        score_text = Text("score", 30, "white", str(score), (20, 10))
+                        score_text.set_bg_colour("transparent")
+                        missed = 5
+                        missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (265, 10))
+                        missed_text.set_bg_colour("transparent")
+                        
+                        
                         cursors.empty()
                         back_button.kill()
+        
+                else:
+                        start = True
+                        back_button.update_frame()
+                        
+                          
                 if start == True and missed > 0:
                         
                         score_text.set_text(str(score))
@@ -641,24 +667,91 @@ while running:
                                                 sprite.update_frame()
                                          #displays the clone
                                          
-        # BASEBALL GAME #############################################################
+        # BASEBALL MINIGAME #############################################################
         
         elif current_screen == "baseball_game":
-                
-                back_button.set_position((10, 230))
-                back_button.update_frame()
+                if countdownAnim in on_screen_animations:
+                        start = False
+                        current_plant.resize((200, 200))
+                        current_plant.set_position((-50, 100))
+                        minigames_bat.group = cursors
+                else:
+                        start = True 
+                        back_button.update_frame()
+                if start == True:
+                        
+                        mouse_pos = mouse_x, mouse_y = pygame.mouse.get_pos()
+                        
+                        minigames_bat.set_position((mouse_x-70, mouse_y-70)) #updates position of baseball bat according to mouse position
+                        
+                        current_plant.update_frame()
+                        
+                        mouse_reset_time = 1000000 #stops the mouse from resetting
+                        cursor.kill() #stops the mouse from showing
+                        
+                        #when hovering over the back button the baseball bat disappears
+                        if not hovering: 
+                                minigames_bat.update_frame()
+                        else:
+                                minigames_bat.kill()
+                                
+                        current_time = pygame.time.get_ticks()
+                        
+                        if previous_mouse_pos != mouse_pos:
+                                time_stationary = 0
+                                time_taken = (current_time - previous_time_distance) / 1000 #in seconds
+                                mouse_x_velocity = (mouse_x - previous_mouse_x) / time_taken
+                                mouse_y_velocity = (mouse_y - previous_mouse_y) / time_taken
+
+                        else:
+                                time_stationary += 1 * delta
+                                if time_stationary > 50:
+                                        mouse_x_velocity, mouse_y_velocity = (0, 0)                 
+                        
+                        previous_mouse_pos = previous_mouse_x, previous_mouse_y = mouse_pos                                                
+                        previous_time_distance = current_time
+                                
+                        spawn_interval = 1
+                        
+                        if current_time - previous_time  > (spawn_interval * 1000):
+                                        previous_time = current_time
+                                        baseball = GameSprite("baseball", (50, 50), screen_center, True)
+                                        ball_velocity = (-1, 0)
+                                        baseball.group = on_screen_clones
+                                        velocity_dict[len(velocity_dict)] = ball_velocity
+                                        print(velocity_dict)
+                                        baseball.set_position((300, 150))
+                                        baseball.update_frame()
+                                        
+                        for clone in on_screen_clones:
+                                colliding = pygame.sprite.spritecollideany(minigames_bat, on_screen_clones, pygame.sprite.collide_mask)
+                                if colliding == clone and math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2) > 200 and mouse_x_velocity == abs(mouse_x_velocity):
+                                        if velocity_dict[clone.cloneid] == ball_velocity:
+                                                restitution = 0.01
+                                                hit_velocity_x = ball_velocity_x * mouse_x_velocity * restitution
+                                                print(f"hit velocity x: {hit_velocity_x}")
+                                                velocity_dict[clone.cloneid] = (-hit_velocity_x, mouse_y_velocity * restitution)
+                                
+                                clone.move(velocity_dict[clone.cloneid], False)
+                        
+                        on_screen_clones.draw(screen)
+                        
+                        back_button.set_position((10, 10))
+                        back_button.update_frame()
+                        
+                        
 
         # SCORE SCREEN ###############################################################
         
         elif current_screen == "score":
                 #layout for each element on screen
-                current_plant.resize(40, 40)
+                current_plant.resize((40, 40))
                 current_plant.set_position((screen_center[0], screen_center[1] - 80), True)
                 current_plant.update_frame()
                 plant_name.set_position((screen_center[0], screen_center[1] - 40), True)
                 plant_name.update_frame()
                 score_screen_text.update_frame()
-                score_text.resize(80, 80)
+                score_text.resize((80, 80))
                 score_text.set_position((screen_center[0], screen_center[1] + 40), True)
                 score_text.update_frame()
                 home_button.set_position((screen_center[0], screen_center[1] + 95), True)
