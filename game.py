@@ -14,6 +14,7 @@ def load():
                         SaveDict = pickle.load(f)
                         BonsaiDict = SaveDict["bonsai"]
                         DaisyDict = SaveDict["daisy"]
+                        #might change this to just return the entrie dictionary rather than splitting it
                         return BonsaiDict, DaisyDict
                 except:
                         return 0, 0
