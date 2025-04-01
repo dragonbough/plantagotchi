@@ -16,7 +16,7 @@ def load():
                         DaisyDict = SaveDict["Daisy"]
                         return BonsaiDict, DaisyDict
                 except:
-                        return 0
+                        return 0, 0
                         
 def set_attribute(Dict, Att):
         try:
@@ -27,7 +27,7 @@ def set_attribute(Dict, Att):
 def save(Plant, cruelty, bonding):
                 try:
                         SaveDict = 0
-                        with open('save.pkl' 'rb') as f:
+                        with open('save.pkl', 'rb') as f:
                                 SaveDict = pickle.load(f)
                         with open('save.pkl', 'wb') as f:
                                 SaveDict[Plant]["Cruelty"] = cruelty
