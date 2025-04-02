@@ -41,8 +41,7 @@ def save(Plant, cruelty, bonding):
                                 
                                 
                 
-Bonsai_Dict = load()
-Daisy_Dict = load()
+Bonsai_Dict, DaisyDict = load()
 
 
 
