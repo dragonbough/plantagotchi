@@ -12,16 +12,14 @@ def load():
         with open('save.pkl', 'rb') as f:
                 try:
                         SaveDict = pickle.load(f)
-                        BonsaiDict = SaveDict["bonsai"]
-                        DaisyDict = SaveDict["daisy"]
                         #might change this to just return the entrie dictionary rather than splitting it
-                        return BonsaiDict, DaisyDict
+                        return SaveDict
                 except:
-                        return 0, 0
-                        
-def set_attribute(Dict, Att):
+                        SaveDict = {"bonsai": {"Cruelty": 0, "Bonding": 0}, "daisy": {"Cruelty": 0, "Bonding": 0}}
+                        return SaveDict
+def set_attribute(Plant, Att):
         try:
-                return Dict[Att]
+                return SaveDict[Plant][Att]
         except:
                 return 0
         
@@ -41,7 +39,7 @@ def save(Plant, cruelty, bonding):
                                 
                                 
                 
-Bonsai_Dict, DaisyDict = load()
+SaveDict = load()
 
 
 
