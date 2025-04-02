@@ -355,7 +355,7 @@ class UIElement(GameSprite):
      
 #SPRITES #################################################################
 
-current_plant = AnimSprite("Daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
+current_plant = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
