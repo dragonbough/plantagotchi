@@ -355,6 +355,7 @@ class UIElement(GameSprite):
                         
                 elif self.name == "bonsai_select":
                         #implementing the bonsai selection 
+                        global current_plant
                         current_plant = AnimSprite("bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
