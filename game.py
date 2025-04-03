@@ -26,8 +26,8 @@ def set_attribute(Plant, Att):
 def save(Plant, cruelty, bonding):
                 try:
                         with open('save.pkl', 'wb') as f:
-                                SaveDict[Plant]["Cruelty"] = cruelty
-                                SaveDict[Plant]["Bonding"] = bonding
+                                SaveDict[Plant]["Cruelty"] = SaveDict[Plant]["Cruelty"] + cruelty
+                                SaveDict[Plant]["Bonding"] = SaveDict[Plant]["Cruelty"] + bonding
                                 pickle.dump(SaveDict, f)
                 except:
                         print("Error in save")
