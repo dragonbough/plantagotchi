@@ -106,6 +106,12 @@ on_screen_animations = RenderQueue()
 on_screen_clones = RenderQueue()
 on_screen_text = RenderQueue()
 
+def clear_screen():
+        on_screen_sprites.empty()
+        on_screen_ui.empty()
+        on_screen_animations.empty()
+        on_screen_clones.empty()
+        on_screen_text.empty()
 
 class GameObject():
         def __init__(self, name, size=(50, 50), position=screen_center):
@@ -256,26 +262,33 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 self.rect = self.image.get_rect()
                 self.rect.x, self.rect.y = self.position
                 
-        def update_frame(self): #updates the frame of the animated sprite and then adds it to the on_screen_sprites render queue
-                self.set_image()
-                self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
-                self.group.add(self)
-                #fps manager
-                current_time = pygame.time.get_ticks()  # Get the current time
-                if current_time - self.previous_time >= self.fps: #checks if time between previous update and current time is more than the fps -- if so, updates
-                        self.previous_time = current_time #updates time of previous update 
-                        if self.frame == self.max_frame:
-                                self.frame = 1 
-                                if self.playing == True:
-                                        self.playing = False #self.playing is only for animations that play once, recurring animations that don't change self.playing are fine
-                                
-                        else:
-                                self.frame += 1 
+        def update_frame(self, static=False, frame=1): #updates the frame of the animated sprite and then adds it to the on_screen_sprites render queue
+                if not static:
+                        self.set_image()
+                        self.group.remove([sprite for sprite in on_screen_sprites if sprite.name == self.name]) #only one of this plant can be on screen at a time
+                        self.group.add(self)
+                        #fps manager
+                        current_time = pygame.time.get_ticks()  # Get the current time
+                        if current_time - self.previous_time >= self.fps: #checks if time between previous update and current time is more than the fps -- if so, updates
+                                self.previous_time = current_time #updates time of previous update 
+                                if self.frame == self.max_frame:
+                                        self.frame = 1 
+                                        if self.playing == True:
+                                                self.playing = False #self.playing is only for animations that play once, recurring animations that don't change self.playing are fine
+                                        
+                                else:
+                                        self.frame += 1
+                else:
+                        self.frame = frame
+                        self.set_image()
+                        self.group.remove([sprite for sprite in self.group if sprite.name == self.name])
+                        self.group.add(self)
                                                 
         def play(self): #functionality for playing single animations -- must be used in combination with the on_screen_animations codeblock in the game rendering
                 self.frame = self.max_frame
                 self.update_frame()
                 self.playing = True
+                
         
                 
 #class plant(AnimSprite):
@@ -346,8 +359,6 @@ class UIElement(GameSprite):
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
                         #or i can set the screen back to main
-           
-           
            
           
      
@@ -591,7 +602,7 @@ while running:
                         missed = 5
                         missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (265, 10))
                         missed_text.set_bg_colour("transparent")
-                        
+                        previous_time_anim = 0
                         
                         cursors.empty()
                         back_button.kill()
@@ -677,14 +688,36 @@ while running:
                         current_plant.resize((200, 200))
                         current_plant.set_position((-50, 100))
                         minigames_bat.group = cursors
-                        previous_mouse_pos = previous_mouse_x, previous_mouse_y = (0, 0) #also needed by some minigame calculations
-                        previous_time_distance = 0 
+                        previous_mouse_pos = previous_mouse_x, previous_mouse_y = (0, 0) 
                         time_stationary = 0
-                        ball_velocity = ball_velocity_x, ball_velocity_y = (-1, 0)
+                        ball_velocity = ball_velocity_x, ball_velocity_y = (0, 0)
                         velocity_dict = {}
+                        hit = []
+                        score = 0 
+                        missed = 0
+                        
+                        score_text = Text("score", 30, "white", str(score), (210, 10))
+                        score_text.set_bg_colour("transparent")
+                        missed = 5
+                        missed_text = Text("missed", 30, "red", f"Remaining misses: {missed}", (265, 10))
+                        missed_text.set_bg_colour("transparent")
+                        
+                        baseball_glove_static = GameSprite("baseball_glove", (75, 75))
+                        baseball_glove_anim = AnimSprite("baseball_glove", (75, 75), screen_center, 5) 
+                        
+                        previous_time_anim = 0   
+                        current_time_anim = 0
+                        spawn = True   
+                        caught = False 
+                        
+                        off_screen = []
+                        
+                        cursors.empty()                                 
+                        
                 else:
                         start = True 
                         back_button.update_frame()
+                        
                 if start == True:
                         
                         mouse_pos = mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -694,7 +727,12 @@ while running:
                         current_plant.update_frame()
                         
                         mouse_reset_time = 1000000 #stops the mouse from resetting
-                        cursor.kill() #stops the mouse from showing
+                        cursor.kill() #stops the normal game cursor from displaying
+                        
+                        score_text.set_text(str(score))
+                        score_text.update_frame()
+                        missed_text.set_text(str(missed))
+                        missed_text.update_frame()
                         
                         #when hovering over the back button the baseball bat disappears
                         if not hovering: 
@@ -711,9 +749,8 @@ while running:
                         
                         if previous_mouse_pos != mouse_pos:
                                 time_stationary = 0
-                                time_taken = (current_time - previous_time_distance) / 1000 #in seconds
-                                mouse_x_velocity = (mouse_x - previous_mouse_x) / time_taken
-                                mouse_y_velocity = (mouse_y - previous_mouse_y) / time_taken
+                                mouse_x_velocity = (mouse_x - previous_mouse_x) / delta
+                                mouse_y_velocity = (mouse_y - previous_mouse_y) / delta
 
                         else:
                                 time_stationary += 1 * delta
@@ -723,36 +760,113 @@ while running:
                         previous_mouse_pos = previous_mouse_x, previous_mouse_y = mouse_pos                                                
                         previous_time_distance = current_time
                                 
-                        spawn_interval = 3 #seconds
+                        spawn_interval = 1.5 #seconds
                         
+                        #spawns baseball every spawn interval
                         if current_time - previous_time  > (spawn_interval * 1000):
+                                        print("time", current_time, previous_time, current_time-previous_time)
                                         previous_time = current_time
-                                        baseball = GameSprite("baseball", (50, 50), screen_center, True)
-                                        ball_velocity = (-5, random.randrange(1, 3))
-                                        baseball.group = on_screen_clones
-                                        velocity_dict[len(velocity_dict)] = ball_velocity
-                                        baseball.set_position((300, random.randrange(30, 160)))
-                                        baseball.update_frame()
                                         
-                        for clone in on_screen_clones:
+                                        baseball = GameSprite("baseball", (50, 50), screen_center, True)
+                                        baseball.group = on_screen_clones
+
+                                        ball_velocity = ball_velocity_x, ball_velocity_y = (-5, random.randrange(1, 3))
+                                        velocity_dict[len(velocity_dict)] = ball_velocity
+
+                                        baseball.set_position((300, random.randrange(30, 160)))
+                                        baseball.update_frame()                        
+
+                                        
+                        #simulates collision for each ball colliding with bat and applies a velocity onto it's key in velocity_dict based on the velocity of the mouse
+                        for baseball in on_screen_clones:
                                 colliding = pygame.sprite.spritecollideany(minigames_bat, on_screen_clones, pygame.sprite.collide_mask)
-                                if colliding == clone and mouse_x_velocity == abs(mouse_x_velocity):
-                                        if velocity_dict[clone.cloneid] == ball_velocity:
+                                if colliding == baseball and mouse_x_velocity == abs(mouse_x_velocity):
+                                        if baseball.cloneid not in hit:
                                                 velocity_magnitude = math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2)
-                                                print(velocity_magnitude)
-                                                if velocity_magnitude > 200:
-                                                        restitution = 0.01
-                                                        hit_velocity_x = ball_velocity_x * mouse_x_velocity * restitution
-                                                        print(f"hit velocity x: {hit_velocity_x}")
-                                                        velocity_dict[clone.cloneid] = (-hit_velocity_x, mouse_y_velocity * restitution)
+                                                print(f"magnitude of hit: {velocity_magnitude}")        
+                                                if velocity_magnitude > 100:
+                                                        
+                                                        restitution = 0.005
+                                                        hit_velocity_x = ball_velocity_x * mouse_x_velocity * restitution 
+                                                        
+                                                        if ball_velocity_y == 0:
+                                                                hit_velocity_y = mouse_y_velocity * restitution 
+                                                        else:
+                                                                hit_velocity_y = mouse_y_velocity * ball_velocity_y * restitution 
+                                                        
+                                                        if hit_velocity_x == 0:
+                                                                hit_velocity_x = -1
+                                                        
+                                                        velocity_dict[baseball.cloneid] = (-hit_velocity_x, hit_velocity_y)
+                                                        if baseball.cloneid not in hit:
+                                                                hit.append(baseball.cloneid) #signal this baseball has been hit
+                                                        print(f"ball velocity = {velocity_dict[baseball.cloneid]} mouse velocity = {mouse_x_velocity, mouse_y_velocity}")
                                 
-                                clone.move(velocity_dict[clone.cloneid], False)
+                                colliding_glove = pygame.sprite.spritecollideany(baseball_glove_static, on_screen_clones, pygame.sprite.collide_mask)
+                                if colliding_glove == baseball and baseball.cloneid in hit:
+                                        score_gradient = 0.1
+                                        score_velocity_x, score_velocity_y = velocity_dict[baseball.cloneid]
+                                        score_magnitude = math.sqrt(score_velocity_x**2 + score_velocity_y**2)
+                                        if score_magnitude < 1:
+                                                score_magnitude = 1
+                                        score += round(score_magnitude * score_gradient)
+                                        
+                                        baseball_glove_anim.set_position(baseball_glove_static.position)
+                                        baseball_glove_static.kill()
+                                        
+                                        caught = True
+                                        spawn = True
+                                        
+                                        baseball.kill()
+                                
+                                if baseball.rect not in screen.get_rect() and baseball.position_x < (screen_width - baseball.width) and baseball.cloneid not in hit: 
+                                        if baseball.cloneid not in off_screen:
+                                                off_screen.append(baseball.cloneid)
+                                                missed -= 1
+                                
+                                #moves each clone by their respective velocity within velocity dict
+                                baseball.move(velocity_dict[baseball.cloneid], False)
+                        
+                        
+                        anim_interval = 1
+                        
+                        
+                        if caught == True:
+                                
+                                current_time_anim += clock.get_time()
+                        
+                                if (current_time_anim - previous_time_anim) > (anim_interval * 1000):
+                                        baseball_glove_anim.kill()
+                                        previous_time_anim = current_time_anim
+                                        caught = False
+                                else:
+                                        baseball_glove_anim.update_frame(static=True, frame=2)
+                                
+                        
+                        if spawn == True:
+                                print ("SPAWNED GLOVE")
+                                previous_glove_pos_y = baseball_glove_static.position[1]
+                                while abs(previous_glove_pos_y - baseball_glove_static.position_y) < 20:
+                                        baseball_glove_static.set_position((220, random.randrange(15, 225)))
+                                spawn = False
+                        
+                        if baseball_glove_anim not in on_screen_sprites:
+                                baseball_glove_static.update_frame()
+                                
                         
                         on_screen_clones.draw(screen)
+                        
                         
                         back_button.set_position((10, 10))
                         back_button.update_frame()
                         
+                        if missed <= 0:
+                                clear_screen()
+                                baseball_glove_anim.kill()
+                                baseball_glove_static.kill()
+                                minigames_bat.kill()
+                                cursors.add(cursor)
+                                switch_screen_to("score")
                         
 
         # SCORE SCREEN ###############################################################
