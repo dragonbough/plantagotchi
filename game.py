@@ -677,15 +677,17 @@ while running:
                                         if colliding: #if clone is colliding with minigames_basket, kill it and increment score by 1
                                                 score += 1
                                                 colliding.kill()
+                                                #pop sound
                                         
                                         if sprite.position_y > 240: #if clone touches bottom of screen, kill it and increment missed score by 1
                                                 missed -= 1
                                                 sprite.kill()
+                                                #life lost
                                         
                                         if missed < 1: #if missed score gets above limit, quit game
                                                 on_screen_clones.empty()
                                                 switch_screen_to("score")
-                                                
+                                                #game over 
                                         sprite.move((0, 3)) #inch each clone down
                                         
                                         if sprite in on_screen_clones: #if sprites have not been killed, update their frames
@@ -793,6 +795,7 @@ while running:
                         for baseball in on_screen_clones:
                                 colliding = pygame.sprite.spritecollideany(minigames_bat, on_screen_clones, pygame.sprite.collide_mask)
                                 if colliding == baseball and mouse_x_velocity == abs(mouse_x_velocity):
+                                        #ball
                                         if baseball.cloneid not in hit:
                                                 velocity_magnitude = math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2)
                                                 print(f"magnitude of hit: {velocity_magnitude}")        
@@ -816,6 +819,7 @@ while running:
                                 
                                 colliding_glove = pygame.sprite.spritecollideany(baseball_glove_static, on_screen_clones, pygame.sprite.collide_mask)
                                 if colliding_glove == baseball and baseball.cloneid in hit:
+                                        #ball
                                         score_gradient = 0.1
                                         score_velocity_x, score_velocity_y = velocity_dict[baseball.cloneid]
                                         score_magnitude = math.sqrt(score_velocity_x**2 + score_velocity_y**2)
@@ -825,7 +829,7 @@ while running:
                                         
                                         baseball_glove_anim.set_position(baseball_glove_static.position)
                                         baseball_glove_static.kill()
-                                        
+                                        #glove
                                         caught = True
                                         spawn = True
                                         
@@ -835,6 +839,7 @@ while running:
                                         if baseball.cloneid not in off_screen:
                                                 off_screen.append(baseball.cloneid)
                                                 missed -= 1
+                                                #life lost
                                 
                                 #moves each clone by their respective velocity within velocity dict
                                 baseball.move(velocity_dict[baseball.cloneid], False)
@@ -873,6 +878,7 @@ while running:
                         back_button.update_frame()
                         
                         if missed <= 0:
+                                #game over
                                 clear_screen()
                                 baseball_glove_anim.kill()
                                 baseball_glove_static.kill()
@@ -902,7 +908,7 @@ while running:
         #SETTINGS ###########################################################################
         
         elif current_screen == "settings":
-                #SETTINGS HERE
+                music_on
                 back_button.set_position((10, 230))
                 back_button.update_frame()
         else:
