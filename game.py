@@ -37,7 +37,7 @@ def save(Plant, cruelty, bonding):
                                 
                 
 SaveDict = load()
-
+xp = 0
 
 
         
@@ -347,18 +347,20 @@ class UIElement(GameSprite):
                                 switch_screen_to("baseball_game")
                         
                 elif self.name == "water_button":
+                        global xp
+                        xp += 2
                         if waterAnim.playing == False:
                                 waterAnim.play()
                         
                 elif self.name == "bonsai_button":
                         #implementing the bonsai selection 
                         global current_plant
-                        save(current_plant.name, current_plant.access_cruelty(), current_plant.access_bonding())
+                        save(current_plant.name, current_plant.access_cruelty(), xp)
                         current_plant = AnimSprite("bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
                         switch_screen_to("prev")
                 elif self.name == "daisy":
                         print("here")
-                        save(current_plant.name, current_plant.access_cruelty(), current_plant.access_bonding())
+                        save(current_plant.name, current_plant.access_cruelty(), xp)
                         current_plant = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding"))
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
