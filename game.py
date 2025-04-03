@@ -389,6 +389,9 @@ countdownAnim.group = on_screen_animations
 bonsai_button = UIElement("bonsai", (80, 80), (150, 280)) #Defines the bonsai selction button, and sets the position as the middle top of the screen (There isn't a png yet)
 bonsai_button.clickable = True
 
+daisy_button = UIElement("daisy", (80, 80), (150, 280))
+daisy_button.clickable = True
+
 water_button = UIElement("water_button", (60, 60), (10, 10))
 water_button.clickable = True
 
@@ -562,8 +565,11 @@ while running:
                 # PLANT SELECTION FUNCTIONALITY HERE
                 back_button.set_position((10, 230))
                 back_button.update_frame()
+                bonsai_button.set_position((60, 10))
                 bonsai_button.update_frame()
-                #maybe you want to add the bonsai_button.update_frame() here? 
+                #maybe you want to add the bonsai_button.update_frame() here?
+                daisy_button.set_position((10, 30))
+                daisy_button.update_frame()
         
         # MINIGAME SELECT SCREEN #############################################
                 
