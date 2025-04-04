@@ -750,6 +750,7 @@ while running:
 
                                         
                                         if missed < 1: #if missed score gets above limit, quit game
+                                                current_plant.update_cruelty(2)
                                                 on_screen_clones.empty()
                                                 switch_screen_to("score")
                                                 pygame.mixer.Sound.play(game_over_sound)
@@ -889,6 +890,7 @@ while running:
                                         score_velocity_x, score_velocity_y = velocity_dict[baseball.cloneid]
                                         score_magnitude = math.sqrt(score_velocity_x**2 + score_velocity_y**2)
                                         if score_magnitude < 1:
+                                                current_plant.update_cruelty(2)
                                                 score_magnitude = 1
                                         score += round(score_magnitude * score_gradient)
                                         
