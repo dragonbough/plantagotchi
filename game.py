@@ -386,7 +386,6 @@ class UIElement(GameSprite):
                         dark_mode.clickable = True
                         dark_mode.update_frame()
                 elif self.name == "dark_mode":
-                        global screen_colour
                         screen_colour = "#black"
                         dark_mode_mode.kill()
                         light_mode = UIElement("light_mode", (60, 60),(150, 170))
