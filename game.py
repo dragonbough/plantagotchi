@@ -366,6 +366,34 @@ class UIElement(GameSprite):
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
                         #or i can set the screen back to main
+                elif self.name == "music.on":
+                        pygame.mixer.music.stop()
+                        music_on.kill()
+                        music_off = UIElement("music_off", (60, 60),(150, 100))
+                        music_off.clickable = True
+                        music_off.update_frame()
+                elif self.name == "music.off":
+                        pygame.mixer.music.play(-1)
+                        music_off.kill()
+                        music_on = UIElement("music_on", (60, 60),(150, 100))
+                        music_on.clickable = True
+                        music_on.update_frame()
+                elif self.name == "light_mode":
+                        global screen_colour
+                        screen_colour = "#a8dea0"
+                        light_mode.kill()
+                        dark_mode = UIElement("dark_mode", (60,60), (150, 170))
+                        dark_mode.clickable = True
+                        dark_mode.update_frame()
+                elif self.name == "dark_mode":
+                        global screen_colour
+                        screen_colour = "#black"
+                        dark_mode_mode.kill()
+                        light_mode = UIElement("light_mode", (60, 60),(150, 170))
+                        light_mode.clickable = True
+                        light_mode.update_frame()
+
+
            
           
      
@@ -924,7 +952,12 @@ while running:
         #SETTINGS ###########################################################################
         
         elif current_screen == "settings":
-                #music_on
+                music_on = UIElement("music_on", (60, 60),(150, 100))
+                music_on.clickable = True
+                music_on.update_frame()
+                light_mode = UIElement("light_mode", (60, 60),(150, 170))
+                light_mode.clickable = True
+                light_mode.update_frame()
                 back_button.set_position((10, 230))
                 back_button.update_frame()
         else:
