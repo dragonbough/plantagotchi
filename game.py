@@ -33,9 +33,6 @@ def save(Plant, cruelty, bonding):
                         print("Error in save")
                         return 0
                         
-                                
-                                
-                
 SaveDict = load()
 xp = 0
 
@@ -484,6 +481,7 @@ plant_name.set_bg_colour("transparent")
 
 score_screen_text = Text("score_screen_text", 10, "white", "achieved a score of:", screen_center)
 score_screen_text.static = True
+score_screen_text.set_bg_colour("transparent")
 score_screen_text.set_position(screen_center, True)
 
 debug_text = Text("debug_text", 20, "green", "DEBUG MODE TRUE", (165, 10))
@@ -605,6 +603,9 @@ while running:
         
         if current_screen == "main":
                 
+                cruelty_bar = pygame.Rect(plant_name.position_x, plant_name.position_y-10, current_plant.access_cruelty(), 10)
+                pygame.draw.rect(screen, "green", cruelty_bar)
+                                
                 current_plant.resize((235, 235))
                 current_plant.set_position((30, 60))
                 current_plant.update_frame() #updates the current_plant plant object's animation and adds it to on_screen_sprites RenderQueue Group
@@ -976,7 +977,11 @@ while running:
         
         elif current_screen == "settings":
                 
-                print(f"music:{music}")
+                music_on.set_position((10, 10))
+                music_off.set_position(music_on.position)
+                
+                light_mode.set_position((90, 10))
+                dark_mode.set_position(light_mode.position)
                 
                 if music_on.toggled == True and music_off.toggled == False:
                         music = False
