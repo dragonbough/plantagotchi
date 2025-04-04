@@ -56,6 +56,7 @@ pygame.display.set_caption("plantagotchi") #setting window text
 pygame.display.set_icon(pygame.image.load("sprites/plantagotchi_icon.png")) #setting icon for the game
 screen_center = screen_width / 2, screen_height /2 
 screen_colour = "black" 
+screen_mode = "dark"
 clock = pygame.time.Clock()
 game_fps = 60
 delta = 1
@@ -313,6 +314,7 @@ class UIElement(GameSprite):
                 super().__init__(name, size, position)
                 self.group = on_screen_ui
                 self.clickable = False
+                self.toggle = False
                 
         #actions each UI element will do if perform() is called
         def perform(self):
@@ -360,7 +362,6 @@ class UIElement(GameSprite):
                         current_plant = AnimSprite("bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
                         switch_screen_to("prev")
                 elif self.name == "daisy":
-                        print("here")
                         save(current_plant.name, current_plant.access_cruelty(), xp)
                         current_plant = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding"))
                         switch_screen_to("prev")
@@ -375,29 +376,22 @@ class UIElement(GameSprite):
                 elif self.name == "music.off":
                         pygame.mixer.music.play(-1)
                         music_off.kill()
-                        music_on = UIElement("music_on", (60, 60),(150, 100))
                         music_on.clickable = True
                         music_on.update_frame()
                 elif self.name == "light_mode":
-                        global screen_colour
-                        screen_colour = "#a8dea0"
-                        light_mode.kill()
-                        dark_mode = UIElement("dark_mode", (60,60), (150, 170))
-                        dark_mode.clickable = True
-                        dark_mode.update_frame()
+                        self.toggle = not self.toggle
+                        dark_mode.toggle = not dark_mode.toggle
                 elif self.name == "dark_mode":
-                        screen_colour = "#black"
-                        dark_mode_mode.kill()
-                        light_mode = UIElement("light_mode", (60, 60),(150, 170))
-                        light_mode.clickable = True
-                        light_mode.update_frame()
+                        self.toggle = not self.toggle
+                        light_mode.toggle = not light_mode.toggle
+ 
 
 
            
           
      
 #SPRITES #################################################################
-global current_plant
+
 current_plant = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
@@ -418,13 +412,13 @@ countdownAnim.group = on_screen_animations
 
 
 #SOUNDS ##################################################################
-ball_sound = pygame.mixer.Sound("ball.wav")
-game_over_sound = pygame.mixer.Sound("game_over.wav")
-glove_sound = pygame.mixer.Sound("glove.wav")
-life_lost_sound = pygame.mixer.Sound("life_lost.wav")
-pop_sound = pygame.mixer.Sound("pop.wav")
-watering_sound = pygame.mixer.Sound("watering.wav")
-pygame.mixer.music.load('bg_music.mp3')
+ball_sound = pygame.mixer.Sound("sounds/ball/ball.wav")
+game_over_sound = pygame.mixer.Sound("sounds/game_over/game_over.wav")
+glove_sound = pygame.mixer.Sound("sounds/glove/glove.wav")
+life_lost_sound = pygame.mixer.Sound("sounds/life_lost/life_lost.wav")
+pop_sound = pygame.mixer.Sound("sounds/pop/pop.wav")
+watering_sound = pygame.mixer.Sound("sounds/watering/watering.wav")
+pygame.mixer.music.load('sounds/bg_music/bg_music.mp3')
 
 
 
@@ -461,6 +455,16 @@ plants_button.clickable = True
 
 settings_button = UIElement("settings_button", (50, 50), (240, 235))
 settings_button.clickable = True 
+
+dark_mode = UIElement("dark_mode", (60,60), (150, 170))
+dark_mode.clickable = True
+dark_mode.toggle = True #game starts in dark mode
+
+light_mode = UIElement("light_mode", (60, 60),(150, 170))
+light_mode.clickable = True
+
+music_on = UIElement("music_on", (60, 60),(150, 100))
+music_on.clickable = True
 
 quit_button = UIElement("quit_button", (60, 60), (10, 230))
 quit_button.clickable = True 
@@ -516,6 +520,7 @@ switch_screen_to("main")
 
 while running:
         pygame.mixer.music.play(-1)
+        
         # CURSOR #####################################################
         
         hovering = []
@@ -580,6 +585,13 @@ while running:
                         if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                                 minigames_bat.set_flip(not minigames_bat.flip_x, False)
         
+        #SCREEN APPEARANCE ##########################################
+        
+        if screen_mode == "dark":
+                screen_colour = "black"
+        elif screen_mode == "light":
+                screen_colour = "#a8dea0"
+                
         screen.fill(screen_colour) 
         
         # MAIN #######################################################
@@ -951,16 +963,26 @@ while running:
         #SETTINGS ###########################################################################
         
         elif current_screen == "settings":
-                music_on = UIElement("music_on", (60, 60),(150, 100))
-                music_on.clickable = True
                 music_on.update_frame()
-                light_mode = UIElement("light_mode", (60, 60),(150, 170))
-                light_mode.clickable = True
-                light_mode.update_frame()
+                
+                print(f"light: {light_mode.toggle}, dark:{dark_mode.toggle}")
+                
+                if light_mode.toggle == True or dark_mode.toggle == False: #if light mode is currently toggled
+                        screen_mode = "light"
+                        light_mode.kill()
+                        dark_mode.update_frame()
+                elif dark_mode.toggle == True or light_mode.toggle == False: #if dark mode is currently toggled
+                        screen_mode = "dark"
+                        dark_mode.kill()
+                        light_mode.update_frame()
+                        
                 back_button.set_position((10, 230))
                 back_button.update_frame()
         else:
                 back_button.update_frame() #every screen other than the main will have a back button              
+        
+        
+        ####################################################################################
         
         for anim in on_screen_animations: #all animations scheduled to be playing (added to the on_screen_animations Rendergroup) will play
                 if anim.playing == True:
