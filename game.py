@@ -326,6 +326,7 @@ class UIElement(GameSprite):
 
                 if self.name == "quit_button":
                         global show_cursor
+                        save(current_plant.name, current_pant.access_cruelty(), xp)
                         show_cursor = False
                         quitAnim.play() #.play() uses the self.playing functionality in AnimSprite so that the animation only plays once
                         
