@@ -232,8 +232,8 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
 class AnimSprite(GameSprite, pygame.sprite.Sprite):
         def __init__(self, name, size=(50, 50), position=screen_center, fps=10, cruelty=0, bonding=0):
                 super().__init__(name, size, position)
-                self.cruelty = cruelty
-                self.bonding = bonding
+                self.__cruelty = cruelty
+                self.__bonding = bonding
                 self.frame = 1
                 self.max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.playing = False
@@ -314,12 +314,16 @@ class UIElement(GameSprite):
                 super().__init__(name, size, position)
                 self.group = on_screen_ui
                 self.clickable = False
-                self.toggle = False
+                self.toggled = False
                 
+        def toggle(self, toggle_element):
+                self.toggled = not self.toggled
+                toggle_element.toggled = not toggle_element.toggled
+
         #actions each UI element will do if perform() is called
         def perform(self):
-                # honestly you're right this needs to be restructured, maybe we can just have a dict of every name to their function and call that, 
-                # then we can define the functions ourselves?
+                global current_plant
+
                 if self.name == "quit_button":
                         global show_cursor
                         show_cursor = False
@@ -355,44 +359,37 @@ class UIElement(GameSprite):
                                 pygame.mixer.Sound.play(watering_sound)
                                 waterAnim.play()
                         
-                elif self.name == "bonsai_button":
+                elif self.name == "bonsai":
                         #implementing the bonsai selection 
-                        global current_plant
                         save(current_plant.name, current_plant.access_cruelty(), xp)
-                        current_plant = AnimSprite("bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
+                        current_plant = bonsai
                         switch_screen_to("prev")
+                        
                 elif self.name == "daisy":
                         save(current_plant.name, current_plant.access_cruelty(), xp)
-                        current_plant = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding"))
+                        current_plant = daisy
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
                         #or i can set the screen back to main
-                elif self.name == "music.on":
-                        pygame.mixer.music.stop()
-                        music_on.kill()
-                        music_off = UIElement("music_off", (60, 60),(150, 100))
-                        music_off.clickable = True
-                        music_off.update_frame()
-                elif self.name == "music.off":
-                        pygame.mixer.music.play(-1)
-                        music_off.kill()
-                        music_on.clickable = True
-                        music_on.update_frame()
+                        
+                elif self.name == "music_on":
+                        self.toggle(music_off)
+                elif self.name == "music_off":
+                        self.toggle(music_on)
+                        
                 elif self.name == "light_mode":
-                        self.toggle = not self.toggle
-                        dark_mode.toggle = not dark_mode.toggle
+                        self.toggle(dark_mode)
                 elif self.name == "dark_mode":
-                        self.toggle = not self.toggle
-                        light_mode.toggle = not light_mode.toggle
- 
-
-
+                        self.toggle(light_mode)
            
           
      
 #SPRITES #################################################################
 
-current_plant = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) #defining the current_plant plant as a Plant object named "daisy"
+daisy = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) 
+bonsai = AnimSprite("bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
+
+current_plant = daisy
 
 minigames_basket = GameSprite("minigames_basket", (100, 100), current_plant.position)
 
@@ -418,10 +415,8 @@ glove_sound = pygame.mixer.Sound("sounds/glove/glove.wav")
 life_lost_sound = pygame.mixer.Sound("sounds/life_lost/life_lost.wav")
 pop_sound = pygame.mixer.Sound("sounds/pop/pop.wav")
 watering_sound = pygame.mixer.Sound("sounds/watering/watering.wav")
+
 pygame.mixer.music.load('sounds/bg_music/bg_music.mp3')
-
-
-
 
 #BUTTONS ##################################################################
 
@@ -458,13 +453,17 @@ settings_button.clickable = True
 
 dark_mode = UIElement("dark_mode", (60,60), (150, 170))
 dark_mode.clickable = True
-dark_mode.toggle = True #game starts in dark mode
+dark_mode.toggled = True #by default, game starts in dark mode
 
 light_mode = UIElement("light_mode", (60, 60),(150, 170))
 light_mode.clickable = True
 
 music_on = UIElement("music_on", (60, 60),(150, 100))
 music_on.clickable = True
+
+music_off = UIElement("music_off", (60, 60),(150, 100))
+music_off.clickable = True
+music_off.toggled = True #by default, game starts with music
 
 quit_button = UIElement("quit_button", (60, 60), (10, 230))
 quit_button.clickable = True 
@@ -516,10 +515,17 @@ show_cursor = True #show custom cursor
 switch_screen_to("main")
 
 
+music = True
+
+
 # MAIN GAME LOOP ###########################################################
 
 while running:
-        pygame.mixer.music.play(-1)
+        
+        if music == True:
+                pygame.mixer.music.play(-1)
+        else:
+                pygame.mixer.music.stop()
         
         # CURSOR #####################################################
         
@@ -606,9 +612,13 @@ while running:
                 waterAnim.set_position((current_plant.position_x+22.5, current_plant.position_y+21))
                 
                 if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
-                        show_cursor = False
-                        plant_name.kill()
+                        on_screen_sprites.empty()
+                        on_screen_clones.empty()
+                        on_screen_text.empty()
+                        on_screen_ui.empty()
+                        cursors.empty()
                 else:
+                        plant_name = Text("plant_name", 20, "white", current_plant.name)
                         plant_name.set_position((current_plant.position_x + 132.5, current_plant.position_y-10), True)
                         plant_name.update_frame()
                 
@@ -622,7 +632,7 @@ while running:
                 # PLANT SELECTION FUNCTIONALITY HERE
                 back_button.set_position((10, 230))
                 back_button.update_frame()
-                bonsai_button.set_position((60, 10))
+                bonsai_button.set_position((70, 10))
                 bonsai_button.update_frame()
                 #maybe you want to add the bonsai_button.update_frame() here?
                 daisy_button.set_position((10, 30))
@@ -850,12 +860,12 @@ while running:
                         for baseball in on_screen_clones:
                                 colliding = pygame.sprite.spritecollideany(minigames_bat, on_screen_clones, pygame.sprite.collide_mask)
                                 if colliding == baseball and mouse_x_velocity == abs(mouse_x_velocity):
-                                        pygame.mixer.Sound.play(ball_sound)
                                         if baseball.cloneid not in hit:
                                                 velocity_magnitude = math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2)
                                                 print(f"magnitude of hit: {velocity_magnitude}")        
                                                 if velocity_magnitude > 100:
                                                         
+                                                        pygame.mixer.Sound.play(ball_sound)
                                                         restitution = 0.005
                                                         hit_velocity_x = ball_velocity_x * mouse_x_velocity * restitution 
                                                         
@@ -874,7 +884,6 @@ while running:
                                 
                                 colliding_glove = pygame.sprite.spritecollideany(baseball_glove_static, on_screen_clones, pygame.sprite.collide_mask)
                                 if colliding_glove == baseball and baseball.cloneid in hit:
-                                        pygame.mixer.Sound.play(ball_sound)
                                         score_gradient = 0.1
                                         score_velocity_x, score_velocity_y = velocity_dict[baseball.cloneid]
                                         score_magnitude = math.sqrt(score_velocity_x**2 + score_velocity_y**2)
@@ -963,15 +972,26 @@ while running:
         #SETTINGS ###########################################################################
         
         elif current_screen == "settings":
-                music_on.update_frame()
                 
-                print(f"light: {light_mode.toggle}, dark:{dark_mode.toggle}")
+                print(f"music:{music}")
                 
-                if light_mode.toggle == True or dark_mode.toggle == False: #if light mode is currently toggled
+                if music_on.toggled == True and music_off.toggled == False:
+                        music = False
+                        music_on.kill()
+                        music_off.update_frame()
+                        
+                elif music_off.toggled == True and music_on.toggled == False:
+                        music = True
+                        music_off.kill()
+                        music_on.update_frame()
+                
+                
+                if light_mode.toggled == True and dark_mode.toggled == False: #if light mode is currently toggled
                         screen_mode = "light"
                         light_mode.kill()
                         dark_mode.update_frame()
-                elif dark_mode.toggle == True or light_mode.toggle == False: #if dark mode is currently toggled
+                        
+                elif dark_mode.toggled == True and light_mode.toggled == False: #if dark mode is currently toggled
                         screen_mode = "dark"
                         dark_mode.kill()
                         light_mode.update_frame()
