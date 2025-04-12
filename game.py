@@ -541,18 +541,20 @@ show_cursor = True #show custom cursor
 
 switch_screen_to("main")
 
-
 music = True
 
+if music == True:
+        pygame.mixer.music.play(-1)
 
 # MAIN GAME LOOP ###########################################################
 
 while running:
         
+        
         if music == True:
-                pygame.mixer.music.play(-1)
+                pygame.mixer.music.unpause()
         else:
-                pygame.mixer.music.stop()
+                pygame.mixer.music.pause()
         
         # CURSOR #####################################################
         
