@@ -7,34 +7,66 @@ import math
 
 screen_size = screen_width, screen_height = 300, 300
 
-
-def load():
-        with open('save.pkl', 'rb') as f:
+def initialise(name, *attributes):
+        with open("save.pkl", "rb") as save:
                 try:
-                        SaveDict = pickle.load(f)
-                        #might change this to just return the entrie dictionary rather than splitting it
-                        return SaveDict
-                except:
-                        SaveDict = {"bonsai": {"Cruelty": 0, "Bonding": 0}, "daisy": {"Cruelty": 0, "Bonding": 0}}
-                        return SaveDict
-def set_attribute(Plant, Att):
-        try:
-                return SaveDict[Plant][Att]
-        except:
-                return 0
-        
-def save(Plant, cruelty, bonding):
-                try:
-                        with open('save.pkl', 'wb') as f:
-                                SaveDict[Plant]["Cruelty"] = SaveDict[Plant]["Cruelty"] + cruelty
-                                SaveDict[Plant]["Bonding"] = SaveDict[Plant]["Cruelty"] + bonding
-                                pickle.dump(SaveDict, f)
-                except:
-                        print("Error in save")
-                        return 0
+                        save_dict = pickle.load(save)
+                        print(f"PRE EXISTING SAVE_DICT = {save_dict}")
+                except EOFError: #nothing to put into save_dict
+                        print("SAVE_DICT EMPTY")
+                        save_dict = {}
                         
-SaveDict = load()
-xp = 0
+        attribute_dict = {attribute : 0 for attribute in attributes}
+        save_dict[name] = attribute_dict
+        
+        with open("save.pkl", "wb") as save:
+                print(f"SAVE DICT PRE INITIALISATION: {save_dict}")
+                pickle.dump(save_dict, save)
+                print(f"SAVE DICT INITIALISED: {save_dict}")
+                return save_dict
+
+
+def load(obj, *attributes):
+        if os.path.exists("save.pkl"):
+                with open("save.pkl", "rb") as save:
+                        save_dict = pickle.load(save)
+                        print(f"SAVE_DICT LOADED: {save_dict}")
+                                   
+        else:
+                save = open("save.pkl", "wb")
+                save.close()
+                save_dict = initialise(obj.name, *attributes)
+        
+        if obj.name not in save_dict:
+                print(f"{obj.name} NOT FOUND IN SAVE DICT: {save_dict}")
+                save_dict = initialise(obj.name, *attributes)
+                
+        if len(attributes) > 1:
+                loaded_vals = [save_dict[obj.name][attribute] for attribute in attributes]
+        else:
+                loaded_vals = save_dict[obj.name][attributes[0]] 
+        
+        return loaded_vals
+                
+
+                        
+
+def save(obj, *attributes):
+        with open("save.pkl", "rb") as save:
+                try:
+                        save_dict = pickle.load(save)
+                        print(f"PRE EXISTING SAVE_DICT = {save_dict}")
+                except EOFError: #nothing to put into save_dict
+                        print("SAVE_DICT EMPTY")
+                        initialise(obj, *attributes)
+        
+        for attribute in attributes:
+                save_dict[obj.name][attribute] = getattr(obj, attribute)          
+        
+        with open("save.pkl", "wb") as save:
+                print(f"SAVE DICT PRE SAVE: {save_dict}")
+                pickle.dump(save_dict, save)
+                print(f"SAVE DICT SAVED: {save_dict}")
 
 
         
@@ -86,7 +118,8 @@ def switch_screen_to(screen):
                 current_screen = visited_screens[len(visited_screens)-1]
         else:
                 current_screen = screen 
-                visited_screens.append(screen) 
+                visited_screens.append(screen)
+        
 #Removes all game objects from previous screen before changing current_screen
 
 #Queue using the pygame Group structure that will be full of Sprites -- the queue can draw all the sprites at once and sprites can be removed/added at any time
@@ -227,10 +260,8 @@ class GameSprite(GameObject, pygame.sprite.Sprite):
                 
 # sprite class inherited from gamesprite class - this one overrides some methods and adds some attributes to allow for animation
 class AnimSprite(GameSprite, pygame.sprite.Sprite):
-        def __init__(self, name, size=(50, 50), position=screen_center, fps=10, cruelty=0, bonding=0):
+        def __init__(self, name, size=(50, 50), position=screen_center, fps=10):
                 super().__init__(name, size, position)
-                self.__cruelty = cruelty
-                self.__bonding = bonding
                 self.frame = 1
                 self.max_frame = return_frames_count(self.directory) - 1 # -1 as we are not considering the image with the plain name
                 self.playing = False
@@ -240,18 +271,7 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 for i in range(self.max_frame):
                         self.cached_images[i+1] = pygame.image.load(self.directory + str(i+1) + self.file_format).convert_alpha()
                 #creates a cache of all the frames in the animation, adding them to a dictionary of item corresponding to image
-        def access_cruelty(self):
-                return self.__cruelty
 
-        def access_bonding(self):
-                return self.__bonding
-
-        def update_cruelty(self, value):
-                self.__cruelty = self.__cruelty + value
-
-        def update_bonding(self, value):
-                self.__bonding = self.__bonding + value
-                
         def set_image(self): #this just sets the current image of the sprite to whatever the current frame is in the dictionary
                 self.image = pygame.transform.scale(self.cached_images[self.frame], self.size)
                 self.rect = self.image.get_rect()
@@ -286,22 +306,29 @@ class AnimSprite(GameSprite, pygame.sprite.Sprite):
                 
         
                 
-#class plant(AnimSprite):
-        #def __init__(self, cruelty, bonding, *args): ##honestly just for readability and so its easier to understand, replace args with each parameter from animsprite
-                #self.__cruelty = cruelty
-                #self.__bonding = bonding 
-                #super.__init__(*args) #and pass in, explicitly, the parameters explicitly into super()
-        #def access_cruelty(self):
-                #return self.__cruelty
+class Plant(AnimSprite):
+        def __init__(self, name, size=(50,50), position=screen_center, fps=10, cruelty=0, bonding=0 ):
+                super().__init__(name, size, position, fps) 
+                self.cruelty, self.bonding = load(self, "cruelty", "bonding")
+                print(f"{self.name} -- cruelty: {self.cruelty} bonding: {self.bonding}")
+                self.max_cruelty = 100
+                self.max_bonding = 100
 
-        #def access_bonding(self):
-               # return self.__bonding
+        def load_stats(self):
+                self.cruelty, self.bonding = load(self, "cruelty", "bonding")
+                print(self.cruelty, self.bonding)
+                
+        def save_stats(self):
+                save(self, "cruelty", "bonding")
 
-        #def update_cruelty(self, value):
-               # self.__cruelty = self.__cruelty + value
+        def update_cruelty(self, value):
+               self.cruelty += value
+               self.cruelty = min(self.cruelty, self.max_cruelty)
 
-       # def update_bonding(self, value):
-               # self.__bonding = self.__bonding + value
+        def update_bonding(self, value):
+               self.bonding += value
+               self.bonding = min(self.bonding, self.max_bonding)
+               
 
 #when creating an instance of this class please specify the cruelty and bonding using cruelty=value so that you don't overwrite inherited attributes or use the function further up for
 #assigning attributes using data from the save file
@@ -323,7 +350,7 @@ class UIElement(GameSprite):
 
                 if self.name == "quit_button":
                         global show_cursor
-                        save(current_plant.name, current_pant.access_cruelty(), xp)
+                        current_plant.save_stats()
                         show_cursor = False
                         quitAnim.play() #.play() uses the self.playing functionality in AnimSprite so that the animation only plays once
                         
@@ -351,21 +378,22 @@ class UIElement(GameSprite):
                                 switch_screen_to("baseball_game")
                         
                 elif self.name == "water_button":
-                        global xp
-                        xp += 2
+                        current_plant.update_bonding(2)
                         if waterAnim.playing == False:
                                 pygame.mixer.Sound.play(watering_sound)
                                 waterAnim.play()
                         
                 elif self.name == "bonsai":
                         #implementing the bonsai selection 
-                        save(current_plant.name, current_plant.access_cruelty(), xp)
+                        current_plant.save_stats()
                         current_plant = bonsai
+                        current_plant.load_stats()
                         switch_screen_to("prev")
                         
                 elif self.name == "daisy":
-                        save(current_plant.name, current_plant.access_cruelty(), xp)
+                        current_plant.save_stats()
                         current_plant = daisy
+                        current_plant.load_stats()
                         switch_screen_to("prev")
                         #Sets the current_plant sprite as the bonsai and would require the user to go back to the main screen to view it
                         #or i can set the screen back to main
@@ -384,8 +412,8 @@ class UIElement(GameSprite):
      
 #SPRITES #################################################################
 
-daisy = AnimSprite("daisy", (200, 200), (70, 50), cruelty=set_attribute("Daisy_Dict", "Cruelty"), bonding=set_attribute("Daisy_Dict", "Bonding")) 
-bonsai = AnimSprite("bonsai", (200, 200), (70, 50), cruelty=set_attribute("Bonsai_Dict", "Cruelty"), bonding=set_attribute("Bonsai_Dict", "Bonding"))
+daisy = Plant("daisy", (200, 200), (70, 50)) 
+bonsai = Plant("bonsai", (200, 200), (70, 50))
 
 current_plant = daisy
 
@@ -602,8 +630,11 @@ while running:
         # MAIN #######################################################
         
         if current_screen == "main":
-                
-                cruelty_bar = pygame.Rect(plant_name.position_x, plant_name.position_y-10, current_plant.access_cruelty(), 10)
+                max_bar_width = 100 
+                bar_width = max_bar_width * (current_plant.cruelty / 100)
+                cruelty_bar = pygame.Rect(plant_name.position_x-10, plant_name.position_y-20, bar_width, 10)
+                cruelty_max_bar = pygame.Rect(cruelty_bar.x, cruelty_bar.y, max_bar_width, cruelty_bar.height)
+                pygame.draw.rect(screen, "red", cruelty_max_bar)
                 pygame.draw.rect(screen, "green", cruelty_bar)
                                 
                 current_plant.resize((235, 235))
@@ -614,7 +645,6 @@ while running:
                 waterAnim.set_position((current_plant.position_x+22.5, current_plant.position_y+21))
                 
                 if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
-                        on_screen_sprites.empty()
                         on_screen_clones.empty()
                         on_screen_text.empty()
                         on_screen_ui.empty()
@@ -634,11 +664,13 @@ while running:
                 # PLANT SELECTION FUNCTIONALITY HERE
                 back_button.set_position((10, 230))
                 back_button.update_frame()
-                bonsai_button.set_position((70, 10))
-                bonsai_button.update_frame()
-                #maybe you want to add the bonsai_button.update_frame() here?
+
                 daisy_button.set_position((10, 30))
                 daisy_button.update_frame()
+                
+                bonsai_button.set_position((91, 30))
+                bonsai_button.update_frame()
+                
         
         # MINIGAME SELECT SCREEN #############################################
                 
@@ -751,7 +783,8 @@ while running:
 
                                         
                                         if missed < 1: #if missed score gets above limit, quit game
-                                                current_plant.update_cruelty(2)
+                                                current_plant.update_bonding(score)
+                                                current_plant.update_cruelty(score)
                                                 on_screen_clones.empty()
                                                 switch_screen_to("score")
                                                 pygame.mixer.Sound.play(game_over_sound)
@@ -846,7 +879,6 @@ while running:
                         
                         #spawns baseball every spawn interval
                         if current_time - previous_time  > (spawn_interval * 1000):
-                                        print("time", current_time, previous_time, current_time-previous_time)
                                         previous_time = current_time
                                         
                                         baseball = GameSprite("baseball", (50, 50), screen_center, True)
@@ -864,8 +896,7 @@ while running:
                                 colliding = pygame.sprite.spritecollideany(minigames_bat, on_screen_clones, pygame.sprite.collide_mask)
                                 if colliding == baseball and mouse_x_velocity == abs(mouse_x_velocity):
                                         if baseball.cloneid not in hit:
-                                                velocity_magnitude = math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2)
-                                                print(f"magnitude of hit: {velocity_magnitude}")        
+                                                velocity_magnitude = math.sqrt(mouse_x_velocity**2 + mouse_y_velocity**2)      
                                                 if velocity_magnitude > 100:
                                                         
                                                         pygame.mixer.Sound.play(ball_sound)
@@ -883,7 +914,6 @@ while running:
                                                         velocity_dict[baseball.cloneid] = (-hit_velocity_x, hit_velocity_y)
                                                         if baseball.cloneid not in hit:
                                                                 hit.append(baseball.cloneid) #signal this baseball has been hit
-                                                        print(f"ball velocity = {velocity_dict[baseball.cloneid]} mouse velocity = {mouse_x_velocity, mouse_y_velocity}")
                                 
                                 colliding_glove = pygame.sprite.spritecollideany(baseball_glove_static, on_screen_clones, pygame.sprite.collide_mask)
                                 if colliding_glove == baseball and baseball.cloneid in hit:
@@ -929,7 +959,6 @@ while running:
                                 
                         
                         if spawn == True:
-                                print ("SPAWNED GLOVE")
                                 previous_glove_pos_y = baseball_glove_static.position[1]
                                 while abs(previous_glove_pos_y - baseball_glove_static.position_y) < 20:
                                         baseball_glove_static.set_position((220, random.randrange(15, 225)))
@@ -952,6 +981,8 @@ while running:
                                 baseball_glove_static.kill()
                                 minigames_bat.kill()
                                 cursors.add(cursor)
+                                current_plant.update_bonding(score)
+                                current_plant.update_cruelty(score)
                                 switch_screen_to("score")
                         
 
@@ -959,6 +990,7 @@ while running:
         
         elif current_screen == "score":
                 #layout for each element on screen
+                
                 current_plant.resize((40, 40))
                 current_plant.set_position((screen_center[0], screen_center[1] - 80), True)
                 current_plant.update_frame()
