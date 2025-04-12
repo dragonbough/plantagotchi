@@ -378,8 +378,9 @@ class UIElement(GameSprite):
                                 switch_screen_to("baseball_game")
                         
                 elif self.name == "water_button":
-                        current_plant.update_bonding(2)
                         if waterAnim.playing == False:
+                                current_plant.update_bonding(2)
+                                current_plant.update_cruelty(2)
                                 pygame.mixer.Sound.play(watering_sound)
                                 waterAnim.play()
                         
@@ -413,7 +414,7 @@ class UIElement(GameSprite):
 #SPRITES #################################################################
 
 daisy = Plant("daisy", (200, 200), (70, 50)) 
-bonsai = Plant("bonsai", (200, 200), (70, 50))
+bonsai = Plant("bonsai", (200, 200), (70, 50), 5)
 
 current_plant = daisy
 
@@ -512,6 +513,9 @@ score_screen_text.static = True
 score_screen_text.set_bg_colour("transparent")
 score_screen_text.set_position(screen_center, True)
 
+ui_bar_text = Text("ui_bar_text", 10, "white", str(current_plant.cruelty))
+ui_bar_text.set_bg_colour("transparent")
+
 debug_text = Text("debug_text", 20, "green", "DEBUG MODE TRUE", (165, 10))
 debug_text.static = True
 debug_text.set_bg_colour("black")
@@ -527,6 +531,10 @@ cursor = GameSprite("cursor", (30, 30))
 cursor.group = cursors
 on_hover_cursor = GameSprite("on_hover_cursor", (30, 30))
 on_hover_cursor.group = cursors
+
+max_bar_width = 100
+cruelty_max_bar = pygame.Rect(110, 20, max_bar_width, 10)
+cruelty_bar = cruelty_max_bar.copy()
 
 ############################################################################
 
@@ -596,7 +604,7 @@ while running:
         # EVENTS ###################################################
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                        running = False
+                        quit_button.perform()
                 
                 #if the mouse button is clicked, for every element currently on screen, 
                 # if the mouse is over the element and the element is clickable, the element's action is performed
@@ -632,12 +640,16 @@ while running:
         # MAIN #######################################################
         
         if current_screen == "main":
-                max_bar_width = 100 
+                
                 bar_width = max_bar_width * (current_plant.cruelty / 100)
-                cruelty_bar = pygame.Rect(plant_name.position_x-10, plant_name.position_y-20, bar_width, 10)
-                cruelty_max_bar = pygame.Rect(cruelty_bar.x, cruelty_bar.y, max_bar_width, cruelty_bar.height)
+                cruelty_bar.width = bar_width
+                
                 pygame.draw.rect(screen, "red", cruelty_max_bar)
                 pygame.draw.rect(screen, "green", cruelty_bar)
+                
+                ui_bar_text.set_position((cruelty_max_bar.x + cruelty_max_bar.width + 5, cruelty_max_bar.y))
+                ui_bar_text.set_text(str(current_plant.cruelty))
+                ui_bar_text.update_frame()
                                 
                 current_plant.resize((235, 235))
                 current_plant.set_position((30, 60))
@@ -646,11 +658,13 @@ while running:
                 waterAnim.resize((current_plant.width, current_plant.height))
                 waterAnim.set_position((current_plant.position_x+22.5, current_plant.position_y+21))
                 
-                if waterAnim in on_screen_animations or quitAnim in on_screen_animations:
-                        on_screen_clones.empty()
+                if waterAnim in on_screen_animations:
+                        cursors.empty()
+                elif quitAnim in on_screen_animations:
+                        cursors.empty()
                         on_screen_text.empty()
                         on_screen_ui.empty()
-                        cursors.empty()
+                        on_screen_sprites.empty()
                 else:
                         plant_name = Text("plant_name", 20, "white", current_plant.name)
                         plant_name.set_position((current_plant.position_x + 132.5, current_plant.position_y-10), True)
