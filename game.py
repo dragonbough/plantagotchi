@@ -549,20 +549,11 @@ show_cursor = True #show custom cursor
 
 switch_screen_to("main")
 
-music = True
-
-if music == True:
-        pygame.mixer.music.play(-1)
+pygame.mixer.music.play(-1) #plays bg music
 
 # MAIN GAME LOOP ###########################################################
 
 while running:
-        
-        
-        if music == True:
-                pygame.mixer.music.unpause()
-        else:
-                pygame.mixer.music.pause()
         
         # CURSOR #####################################################
         
@@ -576,8 +567,6 @@ while running:
         else:
                 mouse_reset_time = 3000 #time before cursor disappears when idle, in milliseconds
                 show_cursor = True 
-                      
-        pygame.mouse.get_rel()
         
         if pygame.mouse.get_focused():
                 mouse_x, mouse_y = pygame.mouse.get_pos()
@@ -1033,12 +1022,12 @@ while running:
                 dark_mode.set_position(light_mode.position)
                 
                 if music_on.toggled == True and music_off.toggled == False:
-                        music = False
+                        pygame.mixer.music.pause()
                         music_on.kill()
                         music_off.update_frame()
                         
                 elif music_off.toggled == True and music_on.toggled == False:
-                        music = True
+                        pygame.mixer.music.unpause()
                         music_off.kill()
                         music_on.update_frame()
                 
