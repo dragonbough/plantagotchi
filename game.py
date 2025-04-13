@@ -604,6 +604,7 @@ while running:
         # EVENTS ###################################################
         for event in pygame.event.get():
                 if event.type == pygame.QUIT:
+                        current_plant.save_stats()
                         quit_button.perform()
                 
                 #if the mouse button is clicked, for every element currently on screen, 
